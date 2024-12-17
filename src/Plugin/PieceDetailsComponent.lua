@@ -194,6 +194,10 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 
 	local content = self.props.fetcher:fetch(self.props.piece)
 	if self.props.piece.type ~= 'image' then content = nil end
+
+	local image = 'http://www.roblox.com/asset/?id=92229743995007'
+	if self.props.piece.type == 'image' then image = nil end 	
+
 	return {
 		e("Frame", {
 			BackgroundTransparency = 1,
@@ -214,7 +218,16 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 			BackgroundColor3 = PluginEnum.ColorBackground,
 			BorderSizePixel = 0,
 			ImageContent = content,
+			LayoutOrder = 1,
 		}),
+		imageStaticPreview = image ~= nil and e('ImageLabel', {
+			AutomaticSize = Enum.AutomaticSize.XY,
+			BackgroundColor3 = PluginEnum.ColorBackground,
+			BorderSizePixel = 0,
+			Image= image,
+			LayoutOrder = 2,
+			Size = UDim2.fromOffset(PluginEnum.PreviewSize, PluginEnum.PreviewSize),
+		  }),
 		-- texturePreviewTop = self.state.editableImage ~= nil and e("ImageLabel", {
 		-- 	Size = UDim2.new(0, PluginEnum.PreviewSize, 0, PluginEnum.PreviewSize),
 		-- 	AutomaticSize = Enum.AutomaticSize.XY,
@@ -233,7 +246,7 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 			BackgroundColor3 = PluginEnum.ColorBackground,
 			BorderSizePixel = 0,
 			TextXAlignment = Enum.TextXAlignment.Left,
-			LayoutOrder = 1
+			LayoutOrder = 3
 		})
 	})
 }

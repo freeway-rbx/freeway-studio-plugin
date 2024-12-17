@@ -139,6 +139,10 @@ function PieceComponent:render()
 	local content = self.props.fetcher:fetch(self.props.piece)
 
 	if self.props.piece.type ~= 'image' then content = nil end 	
+	
+	local image = 'http://www.roblox.com/asset/?id=92229743995007'
+	if self.props.piece.type == 'image' then image = nil end 	
+
 	local wiredLabelTransparency = 1
 	if self.props.fetcher.piece_is_wired[self.props.piece.id] then 
 		wiredLabelTransparency = 0
@@ -176,6 +180,14 @@ function PieceComponent:render()
 			Size = UDim2.fromOffset(PluginEnum.PreviewSize, PluginEnum.PreviewSize),
 		  }),
 	  
+		  imageStaticPreview = image ~= nil and e('ImageLabel', {
+			AutomaticSize = Enum.AutomaticSize.XY,
+			BackgroundColor3 = PluginEnum.ColorBackground,
+			BorderSizePixel = 0,
+			Image= image,
+			LayoutOrder = 3,
+			Size = UDim2.fromOffset(PluginEnum.PreviewSize, PluginEnum.PreviewSize),
+		  }),
 		  pieceName = React.createElement("TextLabel", {
 			Active = true,
 			AutomaticSize = Enum.AutomaticSize.XY,
