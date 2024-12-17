@@ -28,7 +28,7 @@ end
 local MODE_LIST = 0
 local MODE_PIECE_DETAILS = 1
 
-local updateUIStateAutomatically = false
+local updateUIStateAutomatically = true
 
 function Widget:willUnmount()
 	--self.onSelectionChanged:Disconnect()
@@ -132,15 +132,15 @@ function Widget:render()
 	-- print('about to render')
 	local theme = settings().Studio.Theme
 
-	--if true then return self:renderPlayground() end
+--	if true then return self:renderPlayground() end
 
 
 	local element = e("ScrollingFrame", {
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
-		CanvasSize = UDim2.new(0, 0, 0, 0),
+		CanvasSize = UDim2.new(1, 0, 1, 0),
 		AutomaticCanvasSize = Enum.AutomaticSize.XY,
-		ScrollingDirection = Enum.ScrollingDirection.XY,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
 	}, {
 		uiListLayout = e("UIListLayout", {
 			Padding = UDim.new(0, 4),
@@ -159,6 +159,7 @@ function Widget:render()
 			BorderSizePixel = 0,
 			Font = Enum.Font.BuilderSansBold,
 			TextSize = 40,
+			
 			LayoutOrder = 1,
 			[React.Event.MouseButton1Click] = function()
 
@@ -270,10 +271,10 @@ function Widget:renderList()
 		pieceComponents[k] = newPieceComponent
 		k = k + 1
 	end
-	-- print('about to build selection')
 
 	return e("Frame", {
 		Size = UDim2.new(0, 0, 0, 0),
+		AutomaticSize=Enum.AutomaticSize.XY,
 		BackgroundTransparency = 1,
 		LayoutOrder = 3
 	}, 
