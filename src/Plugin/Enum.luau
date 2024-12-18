@@ -35,7 +35,8 @@ local enum = {
 	WIRED_NOT = 0,
 	WIRED_MIXED = 1,
 	WIRED_ALL_CURRENT = 2,
-	WIRED_ALL_OTHER = 3
+	WIRED_ALL_OTHER = 3, 
+	WIRED_TO_CURRENT_AND_UNWIRED = 4
 
 }
 return enum
