@@ -15,7 +15,7 @@ local Widget = React.Component:extend("Widget")
 local PieceComponent = require(script.Parent.PieceComponent)
 local PieceDetailsComponent = require(script.Parent.PieceDetailsComponent)
 local PluginEnum = require(script.Parent.Enum)
---local fetcher = require(script.Parent.object_fetcher)
+
 
 local DEBUG_USE_EDITABLE_IMAGES = true
 local ok, areEditableImagesEnabled = pcall(function()

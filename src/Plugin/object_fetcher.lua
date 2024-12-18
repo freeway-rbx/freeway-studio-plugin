@@ -18,7 +18,8 @@ local object_fetcher = {
     pieces = {}, 
     pieces_map = {}, 
     piece_is_wired = {},
-    download_queue = {}
+    download_queue = {}, 
+    enabled = false
 }
 
 export type Piece = {
@@ -106,6 +107,10 @@ end
 
 local downloadThread = task.spawn(function ()
     while true do
+        if object_fetcher.enabled ~= true then 
+            task.wait(0.5) 
+            continue 
+        end 
         if #object_fetcher.download_queue > 0 then  
             local piece = object_fetcher.download_queue[1]
             local cached =  object_fetcher.cache[piece.id]
@@ -128,6 +133,11 @@ end)
 local fetchThread = task.spawn(function()
 
     while true do
+        if object_fetcher.enabled ~= true then 
+                task.wait(0.5) 
+                continue 
+        end 
+
         local function fetchPiecesFromNetwork() 
             local res = HttpService:GetAsync(BASE_URL .. '/api/pieces')
             local json = HttpService:JSONDecode(res)
@@ -322,6 +332,10 @@ end
 --     task.pause(fetchThread)
 -- end
 
+function object_fetcher:setEnabled(enabled)
+    print("object_fetcher:setEnabled: ", enabled)
+    self.enabled = enabled
+end
 
 function object_fetcher:stop()
     task.cancel(downloadThread)

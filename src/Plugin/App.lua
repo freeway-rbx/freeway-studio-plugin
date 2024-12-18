@@ -39,12 +39,14 @@ function App:render()
 			zIndexBehavior = Enum.ZIndexBehavior.Sibling,
 
 			onInitialState = function(initialState)
+				self.props.fetcher:setEnabled(initialState)
 				self:setState({
 					guiEnabled = initialState,
 				})
 			end,
 
 			onClose = function()
+				self.props.fetcher:setEnabled(false)
 				self:setState({
 					guiEnabled = false,
 				})
@@ -60,7 +62,9 @@ function App:render()
 			buttonTooltip = "Toggle the Asset Sync widget",
 			buttonEnabled = true,
 			buttonActive = self.state.guiEnabled,
+			fetcher = self.props.fetcher,
 			onClick = function()
+				self.props.fetcher:setEnabled(not self.state.guiEnabled)
 				self:setState(function(state)
 					return {
 						guiEnabled = not state.guiEnabled,
