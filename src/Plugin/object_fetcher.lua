@@ -9,9 +9,7 @@ local base64 = require(Packages.base64)
 
 local POLL_RATE = 3 -- seconds
 
-
 local BASE_URL = 'http://localhost:3000'
-
 
 
 
@@ -106,7 +104,7 @@ end
 
 -- download queue handler
 
-coroutine.wrap(function ()
+local downloadThread = task.spawn(function ()
     while true do
         if #object_fetcher.download_queue > 0 then  
             local piece = object_fetcher.download_queue[1]
@@ -125,9 +123,9 @@ coroutine.wrap(function ()
             task.wait(0.1)
         end
     end 
-end)()
+end)
 
-coroutine.wrap(function()
+local fetchThread = task.spawn(function()
 
     while true do
         local function fetchPiecesFromNetwork() 
@@ -179,14 +177,13 @@ coroutine.wrap(function()
                 -- MI bubble the error up, display in UI
                 print('error fetching pieces', err)
             end
-            print('tick, is running ', RunService:IsRunning(), RunService:IsRunMode()) -- TODO MI Why it doesn't detect is running?
+            print('tick, is running ', RunService:IsRunning(), RunService:IsRunMode()) -- TODO MI Why it doesn't detect it's running?
         end
         task.wait(POLL_RATE)
     
     end
 
-end)()
-
+end)
 
 
 function RbxToEditableMesh(rbxMesh):EditableMesh 
@@ -315,8 +312,22 @@ function update_wired_instances(instance: Instance, wires: {}): number
 end
 
 
+-- function object_fetcher:pause()
+--     task.pause(downloadThread)
+--     task.pause(fetchThread)
+-- end
+
+-- function object_fetcher:pause()
+--     task.re(downloadThread)
+--     task.pause(fetchThread)
+-- end
 
 
+function object_fetcher:stop()
+    task.cancel(downloadThread)
+    task.cancel(fetchThread)
+
+end
 
 
 

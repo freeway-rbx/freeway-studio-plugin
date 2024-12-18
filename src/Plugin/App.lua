@@ -50,7 +50,7 @@ function App:render()
 				})
 			end,
 		}, {
-			widget = e(Widget),
+			widget = e(Widget, {fetcher = self.props.fetcher}),
 		}),
 		sharedToolbarButton = e(StudioSharedToolbar, {
 			combinerName = "Freeway-Toolbar",

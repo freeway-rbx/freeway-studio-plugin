@@ -15,8 +15,7 @@ local Widget = React.Component:extend("Widget")
 local PieceComponent = require(script.Parent.PieceComponent)
 local PieceDetailsComponent = require(script.Parent.PieceDetailsComponent)
 local PluginEnum = require(script.Parent.Enum)
-local fetcher = require(script.Parent.object_fetcher)
-type ImageType = "None" | "AssetId" | "BMP"
+--local fetcher = require(script.Parent.object_fetcher)
 
 local DEBUG_USE_EDITABLE_IMAGES = true
 local ok, areEditableImagesEnabled = pcall(function()
@@ -32,6 +31,8 @@ local updateUIStateAutomatically = true
 
 function Widget:willUnmount()
 	--self.onSelectionChanged:Disconnect()
+	task.cancel(self.updateThread)
+
 end
 
 
@@ -56,7 +57,7 @@ export type Piece = {
 }
 
 
-function getPieces(): { Piece }
+function getPieces(fetcher): { Piece }
     -- todo MI handle errors
 	return fetcher.pieces
 end
@@ -81,15 +82,15 @@ function Widget:init()
 		pieces = {},
 		mode = MODE_LIST
 	})
- 	coroutine.wrap(function()
+ 	self.updateThread = task.spawn(function()
         print("WIDGET starting polling")
 
  		while updateUIStateAutomatically do	
-			local pieces = getPieces()
+			local pieces = getPieces(self.props.fetcher)
 			local currentPiece = nil
 			if self.state.currentPiece ~= nil 
 				then 
-					currentPiece = fetcher.pieces_map[self.state.currentPiece.id]
+					currentPiece = self.props.fetcher.pieces_map[self.state.currentPiece.id]
 				else
 			end
 			
@@ -100,26 +101,8 @@ function Widget:init()
 			})
 			task.wait(1)
 		end
-		-- 	-- local elems = self.state.elements
-		-- 	-- if math.fmod(#elems, 2) == 0 then 
-		-- 	-- 	local newIndex = #elems + 1
-		-- 	-- 	elems[newIndex] = 'element ' .. newIndex 
-		-- 	-- else
-		-- 	-- 	table.remove(elems, #elems)
-		-- 	-- end
-			
-		-- 	-- local newTable = {}
-		-- 	-- for k, v in self.state.elements do
-		-- 	-- 	newTable[k] = v .. '123'
-		-- 	-- end
 
-		-- 	-- self:setState({elements = newTable})
-
-		-- 	-- elems[1] = elems[1] .. '1'
-
-
-		-- end 		
-    end)()
+    end)
 	
 end
 
@@ -167,7 +150,7 @@ function Widget:render()
 				local currentPiece = nil
 				if self.state.currentPiece ~= nil 
 				    then 
-						currentPiece = fetcher.pieces_map[self.state.currentPiece.id]
+						currentPiece = self.props.fetcher.pieces_map[self.state.currentPiece.id]
 					else
 				end
 				
@@ -222,7 +205,7 @@ function Widget:renderPieceDetails()
 
 		pieceDetails = e(PieceDetailsComponent, {
 				piece = self.state.currentPiece, 
-				fetcher = fetcher
+				fetcher = self.props.fetcher
 			}
 		),
 	})
@@ -240,7 +223,7 @@ function Widget:renderList()
 			Size = UDim2.new(0, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			LayoutOrder = 1,
-			Text = "To start iterating on images, select an instance with an image property and click ‘Wire’ or place a bitmap file to a working folder.",
+			Text = "To start iterating on meshes and images, select an instance with an image property and click ‘Wire’ or place a bitmap file to a working folder.",
 			Font = Enum.Font.BuilderSansMedium,
 			TextSize = 20,
 			TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButtonText),
@@ -259,7 +242,7 @@ function Widget:renderList()
 			{
 				piece = piece,
 				index = k,
-				fetcher = fetcher, 
+				fetcher = self.props.fetcher, 
 				onClick = function()
 					self:setState({
 						mode = MODE_PIECE_DETAILS,
