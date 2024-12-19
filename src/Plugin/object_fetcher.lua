@@ -97,7 +97,7 @@ local function fetchFromNetwork(piece)
         local em = RbxToEditableMesh(mesh)
         object_fetcher.cache[piece.id] = {object = em, hash = piece.hash}
         print('cached a mesh')
-
+        return
     end
 
     print('!piece type not implemented:', piece.type)
@@ -120,7 +120,7 @@ local downloadThread = task.spawn(function ()
                     print('error fetchFromNetwork:', err)
                 end 
             else 
-                print('skipping download, have cached version ')
+--                print('skipping download, have cached version ')
             end
 
             table.remove(object_fetcher.download_queue, 1)
@@ -306,7 +306,8 @@ function update_wired_instances(instance: Instance, wires: {}): number
             print('about to apply mesh')
 
             local newMeshPart = AssetService:CreateMeshPartAsync(Content.fromObject(em))
-            -- -- local newMeshPart = AssetService:CreateMeshPartAsync(Content.fromUri('rbxassetid://139713999598413'))
+
+            instance.Size = newMeshPart.MeshSize
             instance:ApplyMesh(newMeshPart)
         else
             print('! Unsupported Piece type: ' .. piece.type)
