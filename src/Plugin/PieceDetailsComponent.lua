@@ -4,8 +4,11 @@ local React = require(Packages.React)
 local Cryo = require(Packages.Cryo)
 
 local e = React.createElement
+local StudioComponents = require(Packages.studiocomponents)
+
 local Selection = game:GetService("Selection")
 local CollectionService = game:GetService("CollectionService")
+local AssetService = game:GetService("AssetService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local PieceDetailsComponent = React.Component:extend("PieceDetailsComponent")
 
@@ -126,6 +129,31 @@ function PieceDetailsComponent:render()
 		hasSelectionToWire = true
 		i = i + 1
 	end
+	if not hasSelectionToWire then
+		local message = "Please select an instance(s) with image property to continue."
+		if self.props.piece.type == 'mesh' then 
+			message = "Please select a MeshPart(s) to continue."
+		end 
+		local emptyState = e("Frame", {
+			BackgroundTransparency = 1,
+			Size = UDim2.new(0, 0, 0, 40),
+			AutomaticSize = Enum.AutomaticSize.X,
+			LayoutOrder = i, 
+		},{
+			label = e("TextLabel", {
+				Size = UDim2.new(1, 0, 1, 0),
+				AutomaticSize = Enum.AutomaticSize.XY,
+				Text = message,
+				Font = Enum.Font.BuilderSans,
+				TextSize = PluginEnum.FontSizeTextPrimary,
+				TextColor3 = PluginEnum.ColorTextPrimary,
+				BackgroundColor3 = PluginEnum.ColorBackground,
+				BorderSizePixel = 0,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				})
+		})
+		selectionInstanceWirers['emptyState'] = emptyState
+	end
 
 	local dmWirersLabelIndex = i + 1
 	local hasDMWires = false
@@ -155,32 +183,32 @@ function PieceDetailsComponent:render()
 			}),
 		}, self:renderPreviewAndName(1), 
 		{
-				selectedHeader = hasSelectionToWire and  e("TextLabel", {
-				Size = UDim2.new(0, 0, 0, 0),
+				selectedHeader =  e("TextLabel", {
+				Size = UDim2.new(1, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				LayoutOrder = 2,
-				Text = "Selected:",
+				Text = "Wireable Selected Instances:",
 				Font = Enum.Font.BuilderSansBold,
-				TextSize = PluginEnum.FontSizeHeader,
+				TextSize = PluginEnum.FontSizeTextPrimary,
 				TextColor3 = PluginEnum.ColorTextPrimary,
 				BackgroundColor3 = PluginEnum.ColorBackground,
 				BorderSizePixel = 0,
-				TextXAlignment = Enum.TextXAlignment.Center,
+				TextXAlignment = Enum.TextXAlignment.Left,
 				})
 		},
 		selectionInstanceWirers, 
 		{
 			dmWirerHeader = hasDMWires and e("TextLabel", {
-			Size = UDim2.new(0, 0, 0, 0),
+			Size = UDim2.new(1, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			LayoutOrder = dmWirersLabelIndex,
-			Text = "Wired to:",
+			Text = "Already Wired To:",
 			Font = Enum.Font.BuilderSansBold,
-			TextSize = PluginEnum.FontSizeHeader,
+			TextSize = PluginEnum.FontSizeTextPrimary,
 			TextColor3 = PluginEnum.ColorTextPrimary,
-			BackgroundColor3 = PluginEnum.ColorBackground,
+			BackgroundColor3 = PluginEnum.ColorButtonNavigationBackground,
 			BorderSizePixel = 0,
-			TextXAlignment = Enum.TextXAlignment.Center,
+			TextXAlignment = Enum.TextXAlignment.Left,
 			})
 		},
 		dmInstanceWirers		
@@ -228,13 +256,6 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 			LayoutOrder = 2,
 			Size = UDim2.fromOffset(PluginEnum.PreviewSize, PluginEnum.PreviewSize),
 		  }),
-		-- texturePreviewTop = self.state.editableImage ~= nil and e("ImageLabel", {
-		-- 	Size = UDim2.new(0, PluginEnum.PreviewSize, 0, PluginEnum.PreviewSize),
-		-- 	AutomaticSize = Enum.AutomaticSize.XY,
-		-- 	BackgroundColor3 = PluginEnum.ColorBackground,
-		-- 	BorderSizePixel = 0,
-		-- 	Image =  'http://www.roblox.com/asset/?id=699259085',
-		-- }),
 
 		nameTop = e('TextLabel', {
 			Size = UDim2.new(0, 0, 0, 0),
@@ -247,7 +268,42 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 			BorderSizePixel = 0,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			LayoutOrder = 3
-		})
+		}), 
+		saveAsset = self.props.piece.type == 'mesh' and React.createElement("TextButton", {
+			AnchorPoint = Vector2.new(0.8, 0.5),
+			LayoutOrder = 4,
+			Text = "Save",
+			Size = UDim2.new(0, 30, 0, 30),
+			BackgroundColor3 = PluginEnum.ColorBackgroundHighlight,
+			BackgroundTransparency=0, 
+			[React.Event.MouseButton1Click] = function() 
+				print('CreateAssetAsync start ')
+				local AssetService = game:GetService("AssetService")
+
+				local editableMesh = self.props.fetcher:fetch(self.props.piece)
+				-- add vertices, faces, and uvs to the mesh
+
+				local requestParameters = {
+					CreatorId = game.Players.LocalPlayer.UserId,
+					CreatorType = Enum.AssetCreatorType.User,
+					Name = "My asset",
+					Description = "a good asset",
+				}
+
+				local ok, result, idOrUploadErr = pcall(function()
+					return AssetService:CreateAssetAsync(editableMesh, Enum.AssetType.Mesh, requestParameters)
+				end)
+
+				if not ok then
+					warn(`error calling CreateAssetAsync: {result}`)
+				elseif result == Enum.CreateAssetResult.Success then
+					print(`success, new asset id: {idOrUploadErr}`)
+				else
+					warn(`upload error in CreateAssetAsync: {result}, {idOrUploadErr}`)
+				end
+			end,
+		  })
+
 	})
 }
 end

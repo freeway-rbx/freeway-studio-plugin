@@ -7,6 +7,7 @@ local Selection = game:GetService("Selection")
 
 local React = require(Packages.React)
 local Cryo = require(Packages.Cryo)
+local StudioComponents = require(Packages.studiocomponents)
 
 local e = React.createElement
 
@@ -66,25 +67,12 @@ end
 function Widget:init()
 	print('Widget:init') 
 
-	-- local elements  = {}
-	-- local i = 1
-	-- while i < 5 do
-	-- 	elements[i] = 'elememnt ' .. i
-	-- 	i = i + 1
-	-- end
-
-	-- self:setState({elements = elements})
-
-
-
 	self:setState({
 		selection = Selection:Get(),
 		pieces = {},
 		mode = MODE_LIST
 	})
  	self.updateThread = task.spawn(function()
-        print("WIDGET starting polling")
-
  		while updateUIStateAutomatically do	
 			local pieces = getPieces(self.props.fetcher)
 			local currentPiece = nil
@@ -132,7 +120,13 @@ function Widget:render()
 			HorizontalFlex = Enum.UIFlexAlignment.Fill,
 			
 		}),
-
+		-- uiPadding = e("UIPadding", {
+		-- 	PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
+		-- 	PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
+		-- 	PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
+		-- 	PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
+			
+		-- }),
 		fetchButton = not updateUIStateAutomatically and e("TextButton", {
 			Text = 'Refresh UI',
 			AutomaticSize = Enum.AutomaticSize.XY,
@@ -201,8 +195,15 @@ function Widget:renderPieceDetails()
 			Padding = UDim.new(2, 2),
 			HorizontalAlignment = Enum.HorizontalAlignment.Left,
 			SortOrder = Enum.SortOrder.LayoutOrder,
+			
 		}),
-
+		uiPadding = e("UIPadding", {
+			PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
+			PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
+			PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
+			PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
+			
+		}),
 		pieceDetails = e(PieceDetailsComponent, {
 				piece = self.state.currentPiece, 
 				fetcher = self.props.fetcher
@@ -216,19 +217,20 @@ function Widget:renderList()
 	local instanceWirers = {}
 	-- print('render list')
 	if #self.state.selection == 0 and #self.state.pieces == 0 then
-		print('selections are nil')
 		local theme = settings().Studio.Theme
 
 		local element = e("TextLabel", {
 			Size = UDim2.new(0, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			LayoutOrder = 1,
-			Text = "To start iterating on meshes and images, select an instance with an image property and click ‘Wire’ or place a bitmap file to a working folder.",
-			Font = Enum.Font.BuilderSansMedium,
-			TextSize = 20,
-			TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButtonText),
+			Text = "To start iterating on meshes and images, place a bitmap file to a working folder or select and instance with an image property or a MeshPart and click ‘Wire’",
+			Font = Enum.Font.BuilderSans,
+			TextSize = PluginEnum.FontSizeTextPrimary,
+			TextColor3 = PluginEnum.ColorTextPrimary,
 			BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.Light),
+			BackgroundTransparency=1,
 			BorderSizePixel = 0,
+			TextWrapped=true,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		})
 		return element
@@ -236,7 +238,6 @@ function Widget:renderList()
 	local pieceComponents  = {}
 	local k = 1	
 	for _, piece in self.state.pieces do 
-		-- print('reset pieces: ', piece.id, piece.hash)
 		local newPieceComponent = e(
 			PieceComponent, 
 			{
@@ -341,8 +342,6 @@ function Widget:renderPlayground()
 		i = i +1
 	end
 	
-	print('elements count: ' .. #elements)
-
 	local elemen = e("ScrollingFrame", {
 			Size = UDim2.new(1, 0, 1, 0),
 			BackgroundTransparency = 1,

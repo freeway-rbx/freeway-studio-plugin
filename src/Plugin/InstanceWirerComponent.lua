@@ -1,7 +1,7 @@
 local ContentProvider = game:GetService("ContentProvider")
---!strict
 local Freeway = script:FindFirstAncestor("Freeway")
 local Packages = Freeway.Packages
+local StudioComponents = require(Packages.studiocomponents)
 
 local Cryo = require(Packages.Cryo)
 
@@ -133,13 +133,11 @@ function InstanceWirerComponent:renderPropertyWires(i)
 
 	local property_wiring_state = self.props.combinedPropertyState[self.props.properties[i]]
 	local show_unwire = property_wiring_state ~= PluginEnum.WIRED_NOT
+	local show_wire = property_wiring_state ~= PluginEnum.WIRED_ALL_CURRENT
 	local wireLabel = 'Wire'
 	local unwireLabel = 'Unwire'
-
 	-- property preview
 	local content = nil -- todo MI: put placeholder
-	-- print('property wiring state', self.props.properties[i], property_wiring_state)
-	-- print('combinedPropertyState:', property_wiring_state)
 	if property_wiring_state == PluginEnum.WIRED_ALL_CURRENT then 
 		content = self.props.fetcher:fetch(self.props.piece)
 	end
@@ -154,18 +152,19 @@ function InstanceWirerComponent:renderPropertyWires(i)
 		wireLabel = 'Wire All' unwireLabel = 'Unwire All'
 	end
 	
-	local color = PluginEnum.ColorBackground
-	if property_wiring_state == PluginEnum.WIRED_ALL_CURRENT then 
-		color = PluginEnum.ColorBackgroundHighlight
+	
+	local isWiredToCurrent = property_wiring_state == PluginEnum.WIRED_ALL_CURRENT
+	local wiredTransparency = 1
+	if property_wiring_state == PluginEnum.WIRED_ALL_CURRENT then
+		wiredTransparency = 0
 	end
 
 	
 	return e('Frame', {				
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
-		LayoutOrder = self.props.index + 1, 
-		BackgroundTransparency = 0.8,
-		BackgroundColor3 = color
+		LayoutOrder = self.props.index + 1, 		
+		BackgroundTransparency = 1
 		},
 		{
 			Cryo.Dictionary.join({
@@ -175,20 +174,33 @@ function InstanceWirerComponent:renderPropertyWires(i)
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					FillDirection = Enum.FillDirection.Horizontal, 
 					VerticalAlignment =  Enum.VerticalAlignment.Center,
-					HorizontalFlex = Enum.UIFlexAlignment.Fill
+					--HorizontalFlex = Enum.UIFlexAlignment.Fill
 				}),
 			}, {
 				uiPadding = e("UIPadding", {
-					PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
-					PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
 					PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
 					PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
 				}),
+				wireState = React.createElement("TextLabel", {
+					BackgroundTransparency = 1,
+					Position = UDim2.fromScale(0, 0.457),
+					Size = UDim2.fromOffset(9, 10),
+					Text = '⚡️',
+					Font = Enum.Font.BuilderSansMedium,
+					TextSize = PluginEnum.FontSizeTextPrimary,
+					TextColor3 = PluginEnum.ColorTextPrimary,
+					BackgroundColor3 = PluginEnum.ColorBackground,
+					
+					BorderSizePixel = 0,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					LayoutOrder = 0,
+					TextTransparency = wiredTransparency
 		
+				  }),
 				imagePreview = content == nil and e('ImageLabel', {
 					
 					Size = UDim2.new(0, PluginEnum.PreviewSize, 0, PluginEnum.PreviewSize),
-					AutomaticSize = Enum.AutomaticSize.XY,
+					AutomaticSize = Enum.AutomaticSize.None,
 					BorderSizePixel = 0,
 					Image = 'http://www.roblox.com/asset/?id=699259085',
 					
@@ -197,52 +209,75 @@ function InstanceWirerComponent:renderPropertyWires(i)
 				imageLivePreview = content ~= nil and e('ImageLabel', {
 					
 					Size = UDim2.new(0, PluginEnum.PreviewSize, 0, PluginEnum.PreviewSize),
-					AutomaticSize = Enum.AutomaticSize.XY,
+					AutomaticSize = Enum.AutomaticSize.None,
 					BorderSizePixel = 0,
 					ImageContent = content,
 					
 					LayoutOrder = 1
 				}),
-				name = e('TextLabel', {
-					Size = UDim2.new(0, 0, 0, 0),
-					AutomaticSize = Enum.AutomaticSize.XY,
+				name = e(StudioComponents.Label, {
+					Size = UDim2.new(0, 70, 0, 0),
 					Text = self.props.properties[i],
-					Font = Enum.Font.BuilderSansMedium,
-					TextSize = PluginEnum.FontSizeTextPrimary,
-					TextColor3 = PluginEnum.ColorTextPrimary,
-					BackgroundColor3 = PluginEnum.ColorBackground,
-					BorderSizePixel = 0,
 					TextXAlignment = Enum.TextXAlignment.Left,
-					LayoutOrder = 2
+					LayoutOrder = 2,
 				}),
-				wireButton = e("TextButton", {
+				-- name = e('TextLabel', {
+				-- 	Size = UDim2.new(0, 0, 0, 0),
+				-- 	AutomaticSize = Enum.AutomaticSize.X,
+				-- 	Text = self.props.properties[i],
+				-- 	Font = Enum.Font.BuilderSansMedium,
+				-- 	TextSize = PluginEnum.FontSizeTextPrimary,
+				-- 	TextColor3 = PluginEnum.ColorTextPrimary,
+				-- 	BackgroundColor3 = PluginEnum.ColorBackground,
+				-- 	BorderSizePixel = 0,
+				-- 	TextXAlignment = Enum.TextXAlignment.Left,
+				-- 	LayoutOrder = 2
+				-- }),
+				wireButton = show_wire and  e(StudioComponents.Button, {
 					Text = wireLabel,
-					AutomaticSize = Enum.AutomaticSize.XY,
-					Size = UDim2.new(0, 0, 0, 0),
-					TextColor3 = PluginEnum.ColorButtonNavigationText,
-					BackgroundColor3 = PluginEnum.ColorButtonNavigationBackground,
-					BorderSizePixel = 0,
-					Font = Enum.Font.BuilderSansBold,
-					TextSize = PluginEnum.FontSizeNavigationButton,
+					AutomaticSize = Enum.AutomaticSize.X,
 					LayoutOrder = 3,
-					[React.Event.MouseButton1Click] = function()
+					OnActivated = function()
 						self.props.onClick(self.props.instances, self.props.properties[i])
-					end,
-				}), 
-				unwireButton = show_unwire and e("TextButton", {
+					end
+				}),
+				-- wireButton = show_wire and e("TextButton", {
+				-- 	Text = wireLabel,
+				-- 	AutomaticSize = Enum.AutomaticSize.XY,
+				-- 	Size = UDim2.new(0, 0, 0, 0),
+				-- 	TextColor3 = PluginEnum.ColorButtonNavigationText,
+				-- 	BackgroundColor3 = PluginEnum.ColorButtonNavigationBackground,
+				-- 	BorderSizePixel = 0,
+				-- 	Font = Enum.Font.BuilderSansBold,
+				-- 	TextSize = PluginEnum.FontSizeNavigationButton,
+				-- 	LayoutOrder = 3,
+				-- 	[React.Event.MouseButton1Click] = function()
+				-- 		self.props.onClick(self.props.instances, self.props.properties[i])
+				-- 	end,
+				-- }), 
+				unwireButton = e(StudioComponents.Button, {
 					Text = unwireLabel,
-					AutomaticSize = Enum.AutomaticSize.XY,
-					Size = UDim2.new(0, 0, 0, 0),
-					TextColor3 = PluginEnum.ColorButtonSecondaryActionText,
-					BackgroundColor3 = PluginEnum.ColorButtonSecondaryActionBackground,
-					BorderSizePixel = 0,
-					Font = Enum.Font.BuilderSansBold,
-					TextSize = PluginEnum.FontSizeNavigationButton,
-					LayoutOrder = 3,
-					[React.Event.MouseButton1Click] = function()
+					AutomaticSize = Enum.AutomaticSize.X,
+
+					LayoutOrder = 4,
+					OnActivated = function()
 						self.props.onUwireClick(self.props.instances, self.props.properties[i])
-					end,
-				})
+					end
+				}),
+				-- unwireButton = show_unwire and e("TextButton", {
+				-- 	Text = unwireLabel,
+				-- 	AutomaticSize = Enum.AutomaticSize.XY,
+				-- 	Size = UDim2.new(0, 0, 0, 0),
+				-- 	TextColor3 = PluginEnum.ColorButtonSecondaryActionText,
+				-- 	BackgroundColor3 = PluginEnum.ColorButtonSecondaryActionBackground,
+				-- 	BorderSizePixel = 0,
+				-- 	Font = Enum.Font.BuilderSansBold,
+				-- 	TextSize = PluginEnum.FontSizeNavigationButton,
+				-- 	LayoutOrder = 3,
+				-- 	[React.Event.MouseButton1Click] = function()
+				-- 		self.props.onUwireClick(self.props.instances, self.props.properties[i])
+				-- 	end,
+				-- })
 
 			})
 		}
@@ -251,7 +286,7 @@ end
 
 function InstanceWirerComponent:renderHeaderAndLink()
 	return e('Frame', {				
-		Size = UDim2.new(0, 0, 0, 0),
+		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = 1, 
 		BackgroundTransparency = 1,
@@ -260,7 +295,7 @@ function InstanceWirerComponent:renderHeaderAndLink()
 		{
 			
 			uiListLayout = e("UIListLayout", {
-				Padding = UDim.new(0, PluginEnum.PaddingHorizontal),
+				--Padding = UDim.new(0, PluginEnum.PaddingHorizontal),
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				FillDirection = Enum.FillDirection.Horizontal, 
@@ -268,27 +303,28 @@ function InstanceWirerComponent:renderHeaderAndLink()
 				HorizontalFlex = Enum.UIFlexAlignment.Fill
 			}),
 			header =  e("TextLabel", {
-				Size = UDim2.new(0, 0, 0, 0),
+				Size = UDim2.new(0.5, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				Text = self.props.header,
 				Font = Enum.Font.BuilderSansMedium,
-				TextSize = PluginEnum.FontSizeHeader,
+				TextSize = PluginEnum.FontSizeTextPrimary,
 				TextColor3 = PluginEnum.ColorTextPrimary,
 				BackgroundColor3 = PluginEnum.ColorBackground,
 				BorderSizePixel = 0,
+				BackgroundTransparency = 1,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				LayoutOrder = 1
 			}),
-			unwireButton = self.props.showSelectButton and e("TextButton", {
+			select = self.props.showSelectButton and e("TextButton", {
 				Text = '<u>Select</u>',
-				AutomaticSize = Enum.AutomaticSize.XY,
-				Size = UDim2.new(0, 0, 0, 0),
+				Size = UDim2.new(0, 40, 0 , 20),
 				RichText = true,
-				TextColor3 = PluginEnum.ColorButtonSecondaryActionBackground,
-				BackgroundColor3 = PluginEnum.ColorBackground,
+				TextColor3 = PluginEnum.ColorTextPrimary,
+				TextXAlignment = Enum.TextXAlignment.Right,
 				BorderSizePixel = 0,
-				Font = Enum.Font.BuilderSansMedium,
-				TextSize = PluginEnum.FontSizeNavigationButton,
+				Font = Enum.Font.BuilderSans,
+				TextSize = PluginEnum.FontSizeTextPrimary,
+				BackgroundTransparency = 1,
 				LayoutOrder = 2,
 				[React.Event.MouseButton1Click] = function()
 					Selection:Add(self.props.instances)
