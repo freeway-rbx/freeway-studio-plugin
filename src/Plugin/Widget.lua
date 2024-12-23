@@ -157,14 +157,14 @@ function Widget:render()
 		}),
 
 		back = self.state.mode == MODE_PIECE_DETAILS and e("TextButton", {
-			Text = '[X]',
+			Text = '< Back',
 			AutomaticSize = Enum.AutomaticSize.XY,
 			Size = UDim2.new(0, 0, 0, 0),
-			TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
-			BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
+			TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButtonText),
+			BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButton),
 			BorderSizePixel = 0,
 			Font = Enum.Font.BuilderSansBold,
-			TextSize = 40,
+			TextSize = PluginEnum.FontSizeNavigationButton,
 			LayoutOrder = 2,
 			[React.Event.MouseButton1Click] = function()
 				local lMode = self.state.mode+1

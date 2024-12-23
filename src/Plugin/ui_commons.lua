@@ -88,13 +88,10 @@ function ui_commons:buildWirersModel(instances, pieceType, pieceId)
 			-- if only wired to one piece id: 
 			if pieceId ~= nil then
 				if wire_state[pieceId] and #wirerModel.instances == count then 
-				   print("propwirestate", property, 'ALL_CURRENT')
 					wirerModel.combinedPropertyState[property] = PluginEnum.WIRED_ALL_CURRENT continue
 				elseif wire_state[pieceId] then 
-					print("propwirestate", property, 'WIRED_TO_CURRENT_AND_UNWIRED')
 					wirerModel.combinedPropertyState[property] = PluginEnum.WIRED_TO_CURRENT_AND_UNWIRED continue	
 				else 
-					print("propwirestate", property, 'WIRED_ALL_OTHER')
 					wirerModel.combinedPropertyState[property] = PluginEnum.WIRED_ALL_OTHER 
 					wirerModel.combinedPropertyState['piece_id_' .. property] = Cryo.Dictionary.keys(wire_state)[1]
 				end 
