@@ -1,5 +1,9 @@
 local Freeway = script:FindFirstAncestor("Freeway")
 local Packages = Freeway.Packages
+
+local React = require(Packages.React)
+local e = React.createElement
+
 local Cryo = require(Packages.Cryo)
 
 
@@ -100,6 +104,44 @@ function ui_commons:buildWirersModel(instances, pieceType, pieceId)
 		-- print('!!wireState', wirerModel.combinedPropertyState)
 	end
 	return result
+end
+
+
+function ui_commons:buildInstanceWirerComponent(i, wirerModel, showSelectButton, piece, fetcher)
+	local e =  e(
+		InstanceWirerComponent, 
+		{
+			index = i,
+			instances = wirerModel.instances, 
+			properties = wirerModel.properties,
+			header = wirerModel.header,
+			fetcher = fetcher,
+			piece = piece,
+			showSelectButton = showSelectButton,
+			combinedPropertyState = wirerModel.combinedPropertyState,
+
+			onClick = function(instances, propertyName)
+				-- local recordingId = ChangeHistoryService:TryBeginRecording('wire')
+				-- for _, instance in instances do
+				-- 	-- print('wire instance', instance, self.props.piece.id, propertyName)
+				-- 	t_u:wire_instance(instance, self.props.piece.id, propertyName)
+				-- 	self.props.fetcher:update_instance_if_needed(instance)
+				-- end
+				-- ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
+			end, 
+			onUwireClick = function(instances, propertyName) 
+				-- local recordingId = ChangeHistoryService:TryBeginRecording('wire')
+
+				-- for _, instance in instances do
+				-- 	-- print('unwire all')
+				-- 	t_u:unwire_instance(instance, propertyName)
+				-- end
+				-- ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
+
+			end
+		})
+
+	return e
 end
 
 return ui_commons

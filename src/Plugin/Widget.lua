@@ -16,7 +16,8 @@ local Widget = React.Component:extend("Widget")
 local PieceComponent = require(script.Parent.PieceComponent)
 local PieceDetailsComponent = require(script.Parent.PieceDetailsComponent)
 local PluginEnum = require(script.Parent.Enum)
-
+local ui_commons = require(script.Parent.ui_commons)
+local t_u = require(script.Parent.tags_util)
 
 local DEBUG_USE_EDITABLE_IMAGES = true
 local ok, areEditableImagesEnabled = pcall(function()
@@ -31,9 +32,21 @@ local MODE_PIECE_DETAILS = 1
 local updateUIStateAutomatically = true
 
 function Widget:willUnmount()
-	--self.onSelectionChanged:Disconnect()
+	self.onSelectionChanged:Disconnect()
 	task.cancel(self.updateThread)
+end
 
+function Widget:componentDidMount()
+	self.onSelectionChanged = Selection.SelectionChanged:Connect(function()
+		self:updateSelectedWirersState()
+	end)
+
+end
+
+function Widget:updateSelectedWirersState() 
+	local selection = Selection:Get()
+	local result = ui_commons:buildWireableModelsForListMode(selection)
+	self:setState({selectedWirersModel = result})
 end
 
 
@@ -212,9 +225,24 @@ function Widget:renderPieceDetails()
 	})
 end
 
+function Widget:renderWirers()
+	local models = ui_commons:buildWireableModelsForListMode(Selection:Get())
+	local wirerComponents = {}
+	local i = -20
+	for _, model in models do
+		for _, m in model do 
+			wirerComponents['wirer_' .. i] = ui_commons:buildInstanceWirerComponent(i, m, false, nil, self.props.fetcher)
+		end
+		i = i + 1
+	end
+	return wirerComponents
+end
+
+
 
 function Widget:renderList()
-	local instanceWirers = {}
+	local instanceWirers = self:renderWirers()
+	
 	-- print('render list')
 	if #self.state.selection == 0 and #self.state.pieces == 0 then
 		local theme = settings().Studio.Theme
@@ -235,8 +263,9 @@ function Widget:renderList()
 		})
 		return element
 	end
+
 	local pieceComponents  = {}
-	local k = 1	
+	local k = t_u:table_size(instanceWirers) + 1	
 	for _, piece in self.state.pieces do 
 		local newPieceComponent = e(
 			PieceComponent, 
@@ -252,7 +281,7 @@ function Widget:renderList()
 				LayoutOrder = k
 			}
 		)
-		pieceComponents[k] = newPieceComponent
+		pieceComponents['piece_' .. k] = newPieceComponent
 		k = k + 1
 	end
 

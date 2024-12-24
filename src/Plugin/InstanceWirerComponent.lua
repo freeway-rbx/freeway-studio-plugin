@@ -104,11 +104,10 @@ function InstanceWirerComponent.getDerivedStateFromProps(props)
 end
 
 function InstanceWirerComponent:render()
-	
 	local properties =  {}
 	for i, _ in self.props.properties do
 		local p = self:renderPropertyWires(i)
-		properties[i] = p;
+		properties['property_' .. i] = p;
 	end
 	
 	return React.createElement("Frame", {
@@ -125,7 +124,7 @@ function InstanceWirerComponent:render()
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					
 				}),
-			}, {header = self:renderHeaderAndLink()}, properties) 
+			}, {header0 = self:renderHeaderAndLink(0)}, properties) 
 	})
 end
 
@@ -139,19 +138,22 @@ function InstanceWirerComponent:renderPropertyWires(i)
 	-- property preview
 	local content = nil -- todo MI: put placeholder
 	if property_wiring_state == PluginEnum.WIRED_ALL_CURRENT then 
-		content = self.props.fetcher:fetch(self.props.piece)
+		if self.props.piece ~= nil then 
+			content = self.props.fetcher:fetch(self.props.piece)
+		end	
 	end
+
 	if property_wiring_state == PluginEnum.WIRED_ALL_OTHER then 
 		local piece_id = self.props.combinedPropertyState['piece_id_' .. self.props.properties[i]]
 		content = self.props.fetcher:fetch(self.props.fetcher.pieces_map[piece_id])
 	end
-
-	if self.props.piece.type ~= 'image' then content = nil end
 	
+	if self.props.piece ~= nil and self.props.piece.type ~= 'image' then content = nil end
+	
+
 	if  #self.props.instances > 1  then 
 		wireLabel = 'Wire All' unwireLabel = 'Unwire All'
 	end
-	
 	
 	local isWiredToCurrent = property_wiring_state == PluginEnum.WIRED_ALL_CURRENT
 	local wiredTransparency = 1
@@ -159,6 +161,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 		wiredTransparency = 0
 	end
 
+	
 	
 	return e('Frame', {				
 		Size = UDim2.new(0, 0, 0, 0),
@@ -284,11 +287,11 @@ function InstanceWirerComponent:renderPropertyWires(i)
 		)
 end
 
-function InstanceWirerComponent:renderHeaderAndLink()
+function InstanceWirerComponent:renderHeaderAndLink(layoutOrder)
 	return e('Frame', {				
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
-		LayoutOrder = 1, 
+		LayoutOrder = layoutOrder, 
 		BackgroundTransparency = 1,
 		
 		},

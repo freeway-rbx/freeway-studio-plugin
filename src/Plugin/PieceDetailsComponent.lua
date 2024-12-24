@@ -23,9 +23,7 @@ function PieceDetailsComponent:didMount()
 end
 
 function PieceDetailsComponent:willUnmount()
-	--  print('PieceDetailsComponent:willUnmount')
-	 
-	--self:onClickDisconnectButton()
+	self.onSelectionChanged:Disconnect()	 
 end
 
 function PieceDetailsComponent:init()
