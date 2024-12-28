@@ -85,6 +85,7 @@ function Widget:init()
 		pieces = {},
 		mode = MODE_LIST
 	})
+	self:updateSelectedWirersState()
  	self.updateThread = task.spawn(function()
  		while updateUIStateAutomatically do	
 			local pieces = getPieces(self.props.fetcher)
@@ -113,7 +114,6 @@ function Widget:render()
 	
 
 
-	-- print('about to render')
 	local theme = settings().Studio.Theme
 
 --	if true then return self:renderPlayground() end
@@ -226,7 +226,7 @@ function Widget:renderPieceDetails()
 end
 
 function Widget:renderWirers()
-	local models = ui_commons:buildWireableModelsForListMode(Selection:Get())
+	local models = self.state.selectedWirersModel
 	local wirerComponents = {}
 	local i = -20
 	for _, model in models do

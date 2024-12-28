@@ -4,6 +4,10 @@ type PropertyData = {
 }
 
 local wireableProperties: {string: {PropertyData}}  = {
+     
+    mesh = {
+        MeshPart = {"MeshId"}
+    },
     texture = {
         AdGui = {"TextureID"},
         BackpackItem = {"TextureId"},
@@ -32,9 +36,6 @@ local wireableProperties: {string: {PropertyData}}  = {
         Texture = {"Texture"},
         Trail = {"Texture"},
         UserInputService = {"MouseIcon"},
-    }, 
-    mesh = {
-        MeshPart = {"MeshId"}
     }
 
 }

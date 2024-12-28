@@ -129,7 +129,6 @@ function InstanceWirerComponent:render()
 end
 
 function InstanceWirerComponent:renderPropertyWires(i)
-
 	local property_wiring_state = self.props.combinedPropertyState[self.props.properties[i]]
 	local show_unwire = property_wiring_state ~= PluginEnum.WIRED_NOT
 	local show_wire = property_wiring_state ~= PluginEnum.WIRED_ALL_CURRENT
@@ -145,7 +144,10 @@ function InstanceWirerComponent:renderPropertyWires(i)
 
 	if property_wiring_state == PluginEnum.WIRED_ALL_OTHER then 
 		local piece_id = self.props.combinedPropertyState['piece_id_' .. self.props.properties[i]]
-		content = self.props.fetcher:fetch(self.props.fetcher.pieces_map[piece_id])
+		local piece = self.props.fetcher.pieces_map[piece_id]
+		if piece ~= nil and piece.type == 'image' then 
+			content = self.props.fetcher:fetch(self.props.fetcher.pieces_map[piece_id])
+		end
 	end
 	
 	if self.props.piece ~= nil and self.props.piece.type ~= 'image' then content = nil end
@@ -166,7 +168,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 	return e('Frame', {				
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
-		LayoutOrder = self.props.index + 1, 		
+		LayoutOrder = i + 1, 		
 		BackgroundTransparency = 1
 		},
 		{

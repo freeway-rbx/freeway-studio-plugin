@@ -75,7 +75,6 @@ function ui_commons:buildWirersModel(instances, pieceType, pieceId)
 			end
 		end
 
-
 		for _, property in wirerModel.properties do -- add empty for properties that are not wired
 			
 			if properties_wire_state[property] == nil then properties_wire_state[property]  = {} end
@@ -99,6 +98,9 @@ function ui_commons:buildWirersModel(instances, pieceType, pieceId)
 					wirerModel.combinedPropertyState[property] = PluginEnum.WIRED_ALL_OTHER 
 					wirerModel.combinedPropertyState['piece_id_' .. property] = Cryo.Dictionary.keys(wire_state)[1]
 				end 
+			elseif count == 1 then
+				wirerModel.combinedPropertyState[property] = PluginEnum.WIRED_ALL_OTHER 
+				wirerModel.combinedPropertyState['piece_id_' .. property] = Cryo.Dictionary.keys(wire_state)[1]
 			end
 		end	
 		-- print('!!wireState', wirerModel.combinedPropertyState)
