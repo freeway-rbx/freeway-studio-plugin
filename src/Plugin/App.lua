@@ -58,7 +58,7 @@ function App:render()
 			combinerName = "Freeway-Toolbar",
 			toolbarName = "Freeway",
 			buttonName = "Freeway",
-			buttonIcon = "rbxassetid://103039951720673",
+			buttonIcon = "rbxassetid://103592658908979",
 			buttonTooltip = "Toggle the Asset Sync widget",
 			buttonEnabled = true,
 			buttonActive = self.state.guiEnabled,
