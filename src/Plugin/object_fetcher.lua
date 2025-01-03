@@ -80,7 +80,7 @@ local function fetchFromNetwork(piece)
     if piece.type == 'image' then
         local width = json['width']
         local height = json['height']
-        local b64string = json['bitmap']
+        local b64string = json['base64']
         local options = { Size = Vector2.new(width, height) }
         local editableImage = AssetService:CreateEditableImage(options)
         local decodedData = base64.decode(buffer.fromstring(b64string))
