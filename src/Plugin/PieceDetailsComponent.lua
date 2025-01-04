@@ -219,6 +219,9 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 	-- print('render piece details component')
 
 	local content = self.props.fetcher:fetch(self.props.piece)
+	local hasAsset = self.props.fetcher:pieceHasAsset(self.props.piece)
+	local showSaveButton = content ~= nil and not hasAsset
+
 	if self.props.piece.type ~= 'image' then content = nil end
 
 	local image = 'http://www.roblox.com/asset/?id=92229743995007'
@@ -267,7 +270,7 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 			TextXAlignment = Enum.TextXAlignment.Left,
 			LayoutOrder = 3
 		}), 
-		saveAsset = self.props.piece.type == 'mesh' and React.createElement("TextButton", {
+		saveAsset = self.props.piece.type == 'mesh' and showSaveButton and React.createElement("TextButton", {
 			AnchorPoint = Vector2.new(0.8, 0.5),
 			LayoutOrder = 4,
 			Text = "Save",
@@ -284,8 +287,8 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 				local requestParameters = {
 					CreatorId = game.Players.LocalPlayer.UserId,
 					CreatorType = Enum.AssetCreatorType.User,
-					Name = "My asset",
-					Description = "a good asset",
+					Name = self.props.piece.name,
+					Description = self.props.piece.name .. " saved by Freeway",
 				}
 
 				local ok, result, idOrUploadErr = pcall(function()
@@ -296,6 +299,15 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 					warn(`error calling CreateAssetAsync: {result}`)
 				elseif result == Enum.CreateAssetResult.Success then
 					print(`success, new asset id: {idOrUploadErr}`)
+					local piece = self.props.piece
+					
+					local result = self.props.fetcher:updateAssetIdForPiece(piece.id, piece.hash, idOrUploadErr)
+					if not result then
+						print(`could not update the asset id for piece `, piece.id)
+					else 
+						print(`updated the asset id for piece `, piece.id)	
+					end
+					
 				else
 					warn(`upload error in CreateAssetAsync: {result}, {idOrUploadErr}`)
 				end

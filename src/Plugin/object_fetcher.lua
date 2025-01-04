@@ -62,12 +62,42 @@ local pieces_sync_state : PiecesSyncState = {
 --     update_instance_if_needed(instance)
 -- end)
 
+
+function object_fetcher:pieceHasAsset(piece)
+	local hasAsset = false
+	for i, upload in piece.uploads do
+		if upload.hash == piece.hash then
+			hasAsset = true
+			break
+		end
+	end
+	return hasAsset
+end
+
+
 function object_fetcher:update_instance_if_needed(instance) 
     local wires = t_u:get_instance_wires(instance)
     update_wired_instances(instance, wires)
 end 
 
+local function updateAssetIdForPieceNetwork(pieceId, hash, assetId) 
+    local url = BASE_URL .. '/api/pieces/' .. pieceId .. '/uploads'
+    local data = {hash=hash, assetId= "" .. assetId}
+    local jsonData = HttpService:JSONEncode(data)
+    local res = HttpService:PostAsync(url, jsonData)
+    
+    local json = HttpService:JSONDecode(res)
+    return json
+end
 
+function object_fetcher:updateAssetIdForPiece(pieceId, hash, assetId)
+    local status, errOrResult = pcall(updateAssetIdForPieceNetwork(pieceId, hash, assetId))
+    if not status then
+        return false
+    else 
+        return true
+    end
+end
 
 local function fetchFromNetwork(piece)
     local url = BASE_URL .. '/api/pieces/' .. piece.id .. '/raw'
@@ -151,7 +181,6 @@ local fetchThread = task.spawn(function()
             end
             object_fetcher.pieces_map = tmp_pieces_map
             pieces_map = tmp_pieces_map
-
             local function process_pieces(pieces: { [string]: Piece })
                 -- 1. fetch all wired instances
                 local instanceWires = t_u.ts_get_all_wired_in_dm()
@@ -162,7 +191,7 @@ local fetchThread = task.spawn(function()
                     end 
                 end
                 object_fetcher.piece_is_wired = piece_is_wired
-
+                
                 -- 2. update wired instance when needed and cleanup wires for missing pieces
                 local maxTimestamp = -1
                 for instance, wires in instanceWires do
@@ -170,7 +199,7 @@ local fetchThread = task.spawn(function()
                     --print('ts ' .. ts .. ', maxTs ' .. maxTimestamp)
                     if ts > maxTimestamp then maxTimestamp = ts end
                 end
-            
+                
                 -- -- 3. update the timestamp
                 -- pieces_sync_state.updatedAt = os.time()
                 -- for _, p in pieces_map do
@@ -280,7 +309,7 @@ function update_wired_instances(instance: Instance, wires: {}): number
         -- 2. Update wired instance according to the piece type
         -- 2.1 image        
         if piece.type == 'image' then
-            if piece.role == 'asset' then
+            if piece.role == 'asset' then -- TODO MI rethink this logic, roles are not the way we thought of them at the start
                 local assetId = get_current_asset_id(piece)
                 if assetId == nil then 
                     --print('cant find asset id for piece')
@@ -297,18 +326,25 @@ function update_wired_instances(instance: Instance, wires: {}): number
 
             -- todo editable 
         elseif piece.type == 'mesh' then
-            
-            local em = object_fetcher:fetch(piece)
-            if em == nil then
-                print('cant fetch mesh to set', piece.id)
-                continue
+            local hasAsset = object_fetcher:pieceHasAsset(piece)
+            local newMeshPart
+            if not hasAsset then
+                local em = object_fetcher:fetch(piece)
+                if em == nil then
+                    print('cant fetch mesh to set', piece.id)
+                    continue
+                end
+                print('about to apply mesh')
+
+                newMeshPart = AssetService:CreateMeshPartAsync(Content.fromObject(em))
+            else
+                local assetId = get_current_asset_id(piece)
+                local assetUrl = 'rbxassetid://' .. assetId
+                newMeshPart = AssetService:CreateMeshPartAsync(Content.fromUri(assetUrl))
             end
-            print('about to apply mesh')
-
-            local newMeshPart = AssetService:CreateMeshPartAsync(Content.fromObject(em))
-
             instance.Size = newMeshPart.MeshSize
             instance:ApplyMesh(newMeshPart)
+
         else
             print('! Unsupported Piece type: ' .. piece.type)
         end
