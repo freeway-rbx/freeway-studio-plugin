@@ -63,6 +63,25 @@ local pieces_sync_state : PiecesSyncState = {
 -- end)
 
 
+function object_fetcher:createPieceAndWire(name, content)
+
+    local status, errOrResult = pcall(createPieceNetwork(name, content))
+    if not status then
+        return nil
+    else 
+        return errOrResult.id
+    end
+end
+
+function createPieceNetwork(name, content) 
+    local url = BASE_URL .. '/api/pieces/'
+    local data = {name=name}
+    local jsonData = HttpService:JSONEncode(data)
+    local res = HttpService:PostAsync(url, jsonData)
+    local json = HttpService:JSONDecode(res)
+    return json
+end
+
 function object_fetcher:pieceHasAsset(piece)
 	local hasAsset = false
 	for i, upload in piece.uploads do

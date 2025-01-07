@@ -231,7 +231,13 @@ function Widget:renderWirers()
 	local i = -20
 	for _, model in models do
 		for _, m in model do 
-			wirerComponents['wirer_' .. i] = ui_commons:buildInstanceWirerComponent(i, m, false, nil, self.props.fetcher)
+			wirerComponents['wirer_' .. i] = ui_commons:buildInstanceWirerComponent(i, m, false, nil, self.props.fetcher,  
+			function(instances, propertyName) 
+				self.props.fetcher:createPieceAndWire(propertyName .. ".png")
+			end, 
+			function(instances, propertyName) 
+				print('unwire!')
+			end)
 		end
 		i = i + 1
 	end

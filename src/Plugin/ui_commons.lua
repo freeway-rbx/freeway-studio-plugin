@@ -109,7 +109,7 @@ function ui_commons:buildWirersModel(instances, pieceType, pieceId)
 end
 
 
-function ui_commons:buildInstanceWirerComponent(i, wirerModel, showSelectButton, piece, fetcher)
+function ui_commons:buildInstanceWirerComponent(i, wirerModel, showSelectButton, piece, fetcher, onWire, onUnwire)
 	local e =  e(
 		InstanceWirerComponent, 
 		{
@@ -124,6 +124,7 @@ function ui_commons:buildInstanceWirerComponent(i, wirerModel, showSelectButton,
 
 			onClick = function(instances, propertyName)
 				-- local recordingId = ChangeHistoryService:TryBeginRecording('wire')
+				onWire(instances, propertyName)
 				-- for _, instance in instances do
 				-- 	-- print('wire instance', instance, self.props.piece.id, propertyName)
 				-- 	t_u:wire_instance(instance, self.props.piece.id, propertyName)
@@ -133,7 +134,7 @@ function ui_commons:buildInstanceWirerComponent(i, wirerModel, showSelectButton,
 			end, 
 			onUwireClick = function(instances, propertyName) 
 				-- local recordingId = ChangeHistoryService:TryBeginRecording('wire')
-
+				onUnwire(instances, propertyName)
 				-- for _, instance in instances do
 				-- 	-- print('unwire all')
 				-- 	t_u:unwire_instance(instance, propertyName)
