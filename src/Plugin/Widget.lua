@@ -118,78 +118,96 @@ function Widget:render()
 
 --	if true then return self:renderPlayground() end
 
-
-	local element = e("ScrollingFrame", {
-		Size = UDim2.new(1, 0, 1, 0),
-		BackgroundTransparency = 1,
-		CanvasSize = UDim2.new(1, 0, 1, 0),
-		AutomaticCanvasSize = Enum.AutomaticSize.XY,
-		ScrollingDirection = Enum.ScrollingDirection.Y,
-	}, {
-		uiListLayout = e("UIListLayout", {
-			Padding = UDim.new(0, 4),
-			HorizontalAlignment = Enum.HorizontalAlignment.Left,
-			SortOrder = Enum.SortOrder.LayoutOrder,
-			HorizontalFlex = Enum.UIFlexAlignment.Fill,
-			
-		}),
-		-- uiPadding = e("UIPadding", {
-		-- 	PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
-		-- 	PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
-		-- 	PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
-		-- 	PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
-			
-		-- }),
-		fetchButton = not updateUIStateAutomatically and e("TextButton", {
-			Text = 'Refresh UI',
-			AutomaticSize = Enum.AutomaticSize.XY,
-			Size = UDim2.new(0, 0, 0, 0),
-			TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
-			BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
-			BorderSizePixel = 0,
-			Font = Enum.Font.BuilderSansBold,
-			TextSize = 40,
-			
-			LayoutOrder = 1,
-			[React.Event.MouseButton1Click] = function()
-
-				local pieces = getPieces()
-				local currentPiece = nil
-				if self.state.currentPiece ~= nil 
-				    then 
-						currentPiece = self.props.fetcher.pieces_map[self.state.currentPiece.id]
-					else
-				end
+	local element = e('Frame', {				
+		Size = UDim2.new(0, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.XY,
+		LayoutOrder = 0, 		
+		BackgroundTransparency = 1
+	}, 
+		{
+			uiListLayout = e("UIListLayout", {
+				Padding = UDim.new(0, 4),
+				HorizontalAlignment = Enum.HorizontalAlignment.Left,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				HorizontalFlex = Enum.UIFlexAlignment.Fill,
 				
-				self:setState({
-					pieces = pieces, 
-					currentPiece = currentPiece
-
-				})
-			end
-		}),
-
-		back = self.state.mode == MODE_PIECE_DETAILS and e("TextButton", {
-			Text = '< Back',
-			AutomaticSize = Enum.AutomaticSize.XY,
-			Size = UDim2.new(0, 0, 0, 0),
-			TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButtonText),
-			BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButton),
-			BorderSizePixel = 0,
-			Font = Enum.Font.BuilderSansBold,
-			TextSize = PluginEnum.FontSizeNavigationButton,
-			LayoutOrder = 2,
-			[React.Event.MouseButton1Click] = function()
-				local lMode = self.state.mode+1
-				if lMode > MODE_PIECE_DETAILS then
-					lMode = MODE_LIST
+			}),
+			fetchButton = not updateUIStateAutomatically and e("TextButton", {
+				Text = 'Refresh UI',
+				AutomaticSize = Enum.AutomaticSize.XY,
+				Size = UDim2.new(0, 0, 0, 0),
+				TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
+				BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
+				BorderSizePixel = 0,
+				Font = Enum.Font.BuilderSansBold,
+				TextSize = 40,
+				
+				LayoutOrder = 1,
+				[React.Event.MouseButton1Click] = function()
+	
+					local pieces = getPieces()
+					local currentPiece = nil
+					if self.state.currentPiece ~= nil 
+						then 
+							currentPiece = self.props.fetcher.pieces_map[self.state.currentPiece.id]
+						else
+					end
+					
+					self:setState({
+						pieces = pieces, 
+						currentPiece = currentPiece
+	
+					})
 				end
-				self:setState({mode = lMode})
-			end
-		}),
-		content =  if self.state.mode == MODE_LIST then self:renderList() else self:renderPieceDetails(),
+			}),
+	
+			back = self.state.mode == MODE_PIECE_DETAILS and e("TextButton", {
+				Text = '< Back',
+				AutomaticSize = Enum.AutomaticSize.XY,
+				Size = UDim2.new(0, 0, 0, 0),
+				TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButtonText),
+				BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButton),
+				BorderSizePixel = 0,
+				Font = Enum.Font.BuilderSansBold,
+				TextSize = PluginEnum.FontSizeNavigationButton,
+				LayoutOrder = 2,
+				[React.Event.MouseButton1Click] = function()
+					local lMode = self.state.mode+1
+					if lMode > MODE_PIECE_DETAILS then
+						lMode = MODE_LIST
+					end
+					self:setState({mode = lMode})
+				end
+			}),
+			-- scrolling content frame
+			e("ScrollingFrame", {
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				CanvasSize = UDim2.new(1, 0, 1, 0),
+				AutomaticCanvasSize = Enum.AutomaticSize.XY,
+				LayoutOrder = 3,
+				ScrollingDirection = Enum.ScrollingDirection.Y,
+			}, {
+				uiListLayout = e("UIListLayout", {
+					Padding = UDim.new(0, 4),
+					HorizontalAlignment = Enum.HorizontalAlignment.Left,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					HorizontalFlex = Enum.UIFlexAlignment.Fill,
+					
+				}),
+				-- uiPadding = e("UIPadding", {
+				-- 	PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
+				-- 	PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
+				-- 	PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
+				-- 	PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
+					
+				-- }),
+				content =  if self.state.mode == MODE_LIST then self:renderList() else self:renderPieceDetails(),
+		
+			})
+		}
+	)
 
-	})
 
 	return element
 end
