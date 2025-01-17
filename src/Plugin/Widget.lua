@@ -18,6 +18,7 @@ local PieceDetailsComponent = require(script.Parent.PieceDetailsComponent)
 local PluginEnum = require(script.Parent.Enum)
 local ui_commons = require(script.Parent.ui_commons)
 local t_u = require(script.Parent.tags_util)
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
 local DEBUG_USE_EDITABLE_IMAGES = true
 local ok, areEditableImagesEnabled = pcall(function()
@@ -71,15 +72,7 @@ export type Piece = {
 }
 
 
-function getPieces(fetcher): { Piece }
-    -- todo MI handle errors
-	return fetcher.pieces
-end
-
-
 function Widget:init()
-	print('Widget:init') 
-
 	self:setState({
 		selection = Selection:Get(),
 		pieces = {},
@@ -88,7 +81,21 @@ function Widget:init()
 	self:updateSelectedWirersState()
  	self.updateThread = task.spawn(function()
  		while updateUIStateAutomatically do	
-			local pieces = getPieces(self.props.fetcher)
+
+			-- fetching data, should be externalized and listen to events from object_fetcher
+			local pieces = self.props.fetcher.pieces
+			local piecesMap = self.props.fetcher.pieces_map
+			local pieceIsWired = self.props.fetcher.piece_is_wired
+			local pendingSaving = {}
+
+			for wiredPieceId in pieceIsWired do
+				local p = piecesMap[wiredPieceId]; 
+				if p == nil then continue end
+				if not self.props.fetcher:pieceHasAsset(p) then
+					table.insert(pendingSaving, p) 
+				end
+			end
+
 			local currentPiece = nil
 			if self.state.currentPiece ~= nil 
 				then 
@@ -96,8 +103,10 @@ function Widget:init()
 				else
 			end
 			
+
 			self:setState({
 				pieces = pieces, 
+				pendingSaving = pendingSaving,
 				currentPiece = currentPiece
 
 			})
@@ -112,14 +121,12 @@ end
 
 function Widget:render()
 	
-
-
 	local theme = settings().Studio.Theme
 
 --	if true then return self:renderPlayground() end
 
 	local element = e('Frame', {				
-		Size = UDim2.new(0, 0, 0, 0),
+		Size = UDim2.new(1, 0, 1, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = 0, 		
 		BackgroundTransparency = 1
@@ -142,10 +149,10 @@ function Widget:render()
 				Font = Enum.Font.BuilderSansBold,
 				TextSize = 40,
 				
-				LayoutOrder = 1,
+				LayoutOrder = 0,
 				[React.Event.MouseButton1Click] = function()
 	
-					local pieces = getPieces()
+					local pieces = self.props.fetcher.pieces
 					local currentPiece = nil
 					if self.state.currentPiece ~= nil 
 						then 
@@ -153,6 +160,7 @@ function Widget:render()
 						else
 					end
 					
+
 					self:setState({
 						pieces = pieces, 
 						currentPiece = currentPiece
@@ -161,6 +169,22 @@ function Widget:render()
 				end
 			}),
 	
+			savePending = #self.state.pendingSaving~=0 and e("TextButton", {
+				Text = 'Save ' .. #self.state.pendingSaving .. ' dynamic piece(s) to Roblox',
+				AutomaticSize = Enum.AutomaticSize.XY,
+				Size = UDim2.new(0, 0, 0, 0),
+				TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
+				BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
+				BorderSizePixel = 0,
+				Font = Enum.Font.BuilderSansBold,
+				TextSize = 20,
+				
+				LayoutOrder = 1,
+				[React.Event.MouseButton1Click] = function()
+					print('not implemented yet')
+				end
+			}),
+
 			back = self.state.mode == MODE_PIECE_DETAILS and e("TextButton", {
 				Text = '< Back',
 				AutomaticSize = Enum.AutomaticSize.XY,
@@ -184,7 +208,7 @@ function Widget:render()
 				Size = UDim2.new(1, 0, 1, 0),
 				BackgroundTransparency = 1,
 				CanvasSize = UDim2.new(1, 0, 1, 0),
-				AutomaticCanvasSize = Enum.AutomaticSize.XY,
+				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				LayoutOrder = 3,
 				ScrollingDirection = Enum.ScrollingDirection.Y,
 			}, {
@@ -251,7 +275,16 @@ function Widget:renderWirers()
 		for _, m in model do 
 			wirerComponents['wirer_' .. i] = ui_commons:buildInstanceWirerComponent(i, m, false, nil, self.props.fetcher,  
 			function(instances, propertyName) 
-				self.props.fetcher:createPieceAndWire(propertyName .. ".png")
+
+				local recordingId = ChangeHistoryService:TryBeginRecording('wire')
+				local newPieceId = self.props.fetcher:createPiece(propertyName .. ".png")
+				print('newPieceId', newPieceId)
+				for _, instance in instances do
+					t_u:wire_instance(instance, newPieceId, propertyName)
+					self.props.fetcher:update_instance_if_needed(instance)
+				end
+				ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
+
 			end, 
 			function(instances, propertyName) 
 				print('unwire!')
@@ -274,7 +307,7 @@ function Widget:renderList()
 		local element = e("TextLabel", {
 			Size = UDim2.new(0, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.XY,
-			LayoutOrder = 1,
+			LayoutOrder = 4,
 			Text = "To start iterating on meshes and images, place a bitmap file to a working folder or select and instance with an image property or a MeshPart and click ‘Wire’",
 			Font = Enum.Font.BuilderSans,
 			TextSize = PluginEnum.FontSizeTextPrimary,

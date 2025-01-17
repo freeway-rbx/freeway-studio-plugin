@@ -62,24 +62,29 @@ local pieces_sync_state : PiecesSyncState = {
 --     update_instance_if_needed(instance)
 -- end)
 
+local function createPieceNetwork(name, content) 
+    
+    local url = BASE_URL .. '/api/pieces/'
+    local data = {name=name}
+    local jsonData = HttpService:JSONEncode(data)
+    
+    local res = HttpService:PostAsync(url, jsonData)
 
-function object_fetcher:createPieceAndWire(name, content)
+    local json = HttpService:JSONDecode(res)
+    return json
+end
 
-    local status, errOrResult = pcall(createPieceNetwork(name, content))
+
+function object_fetcher:createPiece(name, content)
+
+    local status, errOrResult = pcall(function () 
+        return createPieceNetwork(name, content) 
+    end)
     if not status then
         return nil
     else 
         return errOrResult.id
     end
-end
-
-function createPieceNetwork(name, content) 
-    local url = BASE_URL .. '/api/pieces/'
-    local data = {name=name}
-    local jsonData = HttpService:JSONEncode(data)
-    local res = HttpService:PostAsync(url, jsonData)
-    local json = HttpService:JSONDecode(res)
-    return json
 end
 
 function object_fetcher:pieceHasAsset(piece)

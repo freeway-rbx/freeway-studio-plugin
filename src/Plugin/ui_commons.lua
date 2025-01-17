@@ -24,9 +24,8 @@ function ui_commons:buildWireableModelsForListMode(instances)
 			table.insert(wireables, instance)
 		end
 	end	
-
 	local wirersModelMeshes = self:buildWirersModel(wireables, 'mesh')
-	local wirersModelImages = self:buildWirersModel(wireables, 'image')
+	local wirersModelImages = self:buildWirersModel(wireables, 'texture')
 	return {wirersModelMeshes, wirersModelImages}
 end
 
@@ -37,13 +36,13 @@ function ui_commons:buildWirersModel(instances, pieceType, pieceId)
 		local wirerModelByType = result[instance.ClassName]
 		if wirerModelByType == nil then 
 			local properties = nil
-			if (pieceType == 'image') then
-				properties = WireableProperties['texture'][instance.ClassName]
-			elseif (pieceType == 'mesh') then 
-				properties = WireableProperties['mesh'][instance.ClassName]
+			for name, _ in WireableProperties[pieceType][instance.ClassName] do
+				if properties == nil then
+					properties = {}
+				end
+				table.insert(properties, name)
 			end
 
-			--if properties == nil then properties = {} end
 			if properties == nil then continue end -- this instance can't be wired
 			wirerModelByType = {
 				instances = {},
