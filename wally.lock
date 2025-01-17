@@ -88,6 +88,21 @@ version = "1.2.6"
 dependencies = [["collections", "jsdotlua/collections@1.2.6"]]
 
 [[package]]
+name = "reselim/base64"
+version = "3.0.0"
+dependencies = []
+
+[[package]]
+name = "roblox-integrations/freeway"
+version = "0.1.0"
+dependencies = [["CreateSharedToolbar", "stravant/create-shared-toolbar@0.1.0"], ["Cryo", "uglypoe/cryo@1.0.3"], ["React", "jsdotlua/react@17.1.0"], ["ReactRoblox", "jsdotlua/react-roblox@17.1.0"], ["base64", "reselim/base64@3.0.0"], ["studiocomponents", "sircfenner/studiocomponents@1.1.0"]]
+
+[[package]]
+name = "sircfenner/studiocomponents"
+version = "1.1.0"
+dependencies = [["react", "jsdotlua/react@17.1.0"], ["react-roblox", "jsdotlua/react-roblox@17.1.0"]]
+
+[[package]]
 name = "stravant/create-shared-toolbar"
 version = "0.1.0"
 dependencies = []
@@ -96,8 +111,3 @@ dependencies = []
 name = "uglypoe/cryo"
 version = "1.0.3"
 dependencies = []
-
-[[package]]
-name = "uglypoe/photoshop-studio-plugin"
-version = "0.1.0"
-dependencies = [["CreateSharedToolbar", "stravant/create-shared-toolbar@0.1.0"], ["Cryo", "uglypoe/cryo@1.0.3"], ["React", "jsdotlua/react@17.1.0"], ["ReactRoblox", "jsdotlua/react-roblox@17.1.0"]]

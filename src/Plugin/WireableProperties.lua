@@ -8,7 +8,7 @@ local wireableProperties: {string: {PropertyData}}  = {
     mesh = {
         MeshPart = {"MeshId"}
     },
-    texture = {
+    image = {
         AdGui = {
             TextureID = {editableImage=false, localAsset=true}},
         BackpackItem = {
