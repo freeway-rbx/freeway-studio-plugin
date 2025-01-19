@@ -18,7 +18,7 @@ local wireableProperties: {string: {PropertyData}}  = {
         ClickDetector = {
             CursorIcon = {editableImage=false, localAsset=true}},
         Decal = {
-            Texture = {editableImage=true, localAsset=true}},
+            Texture = {editableImage=false, localAsset=true, editableProperty='TextureContent'}},
         DragDetector = {
             ActivatedCursorIcon = {editableImage=false, localAsset=true}},
         FileMesh = {
@@ -26,20 +26,20 @@ local wireableProperties: {string: {PropertyData}}  = {
         FloorWire = {
             Texture = {editableImage=false, localAsset=true}},
         ImageButton = {
-            Image = {editableImage=true, localAsset=true}, 
+            Image = {editableImage=false, localAsset=true, editableProperty='ImageContent'}, 
             HoverImage = {editableImage=false, localAsset=true}, 
             PressedImage = {editableImage=false, localAsset=true}},
         ImageHandleAdornment = {
             Image = {editableImage=false, localAsset=true}},
         ImageLabel = {
-            Image = {editableImage=true, localAsset=true}},
+            Image = {editableImage=false, localAsset=true, editableProperty='ImageContent'}},
         MaterialVariant = {
             ColorMap = {editableImage=true, localAsset=false}, 
             MetalnessMap = {editableImage=false, localAsset=false}, 
             NormalMap = {editableImage=false, localAsset=false}, 
             RoughnessMap = {editableImage=false, localAsset=false}},
         MeshPart = {
-            TextureID = {editableImage=true, localAsset=true}},
+            TextureID = {editableImage=false, localAsset=true, editableProperty='TextureContent'}},
         Mouse = {
             Icon = {editableImage=false, localAsset=true}},
         Pants = { 
@@ -68,10 +68,10 @@ local wireableProperties: {string: {PropertyData}}  = {
             SunTextureId = {editableImage=false, localAsset=true}, 
             MoonTextureId = {editableImage=false, localAsset=true}},
         SurfaceAppearance = {
-            ColorMap = {editableImage=false, localAsset=true}, 
-            MetalnessMap = {editableImage=false, localAsset=true}, 
-            NormalMap = {editableImage=false, localAsset=true}, 
-            RoughnessMap = {editableImage=false, localAsset=true}},
+            ColorMap = {editableImage=false, localAsset=false}, 
+            MetalnessMap = {editableImage=false, localAsset=false}, 
+            NormalMap = {editableImage=false, localAsset=false}, 
+            RoughnessMap = {editableImage=false, localAsset=false}},
         TerrainDetail = {
             ColorMap = {editableImage=false, localAsset=false}, 
             MetalnessMap = {editableImage=false, localAsset=false}, 
@@ -88,7 +88,11 @@ local wireableProperties: {string: {PropertyData}}  = {
 
 }
 
-
+function wireableProperties:get_image_property_configuration(className, propertyName): {}
+    local instanceType = self['image'][className]
+    if instanceType == nil then return nil end
+    return instanceType[propertyName]
+end
 
 
 return wireableProperties

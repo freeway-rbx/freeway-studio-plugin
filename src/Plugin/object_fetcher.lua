@@ -6,6 +6,7 @@ local CollectionService = game:GetService("CollectionService")
 
 local t_u = require(script.Parent.tags_util)
 local base64 = require(Packages.base64)
+local WireableProperties = require(script.Parent.WireableProperties)
 
 local POLL_RATE = 3 -- seconds
 
@@ -296,8 +297,6 @@ function object_fetcher:fetch(piece)
 
 end
 
-
-
 function get_current_asset_id(piece: Piece): string
     for _, upload in piece.uploads do
         if piece.hash ~= upload.hash then continue end
@@ -331,24 +330,41 @@ function update_wired_instances(instance: Instance, wires: {}): number
             continue
         end
         -- 2. Update wired instance according to the piece type
-        -- 2.1 image        
+        -- 2.1 images. Based on 3 possible image content types set either Roblox asset Id, or local asset id, or editable image
         if piece.type == 'image' then
-            if piece.role == 'asset' then -- TODO MI rethink this logic, roles are not the way we thought of them at the start
+            local imagePropertyConfig = WireableProperties:get_image_property_configuration(instance.ClassName, propertyName)
+            local hasAsset = object_fetcher:pieceHasAsset(piece)
+            print(instance.ClassName, propertyName, hasAsset, get_current_asset_id(piece))
+            if hasAsset then
                 local assetId = get_current_asset_id(piece)
-                if assetId == nil then 
-                    --print('cant find asset id for piece')
-                    continue 
-                end
                 local assetUrl = 'rbxassetid://' .. assetId
-                if(instance[propertyName] ~= assetUrl) then -- only update the property if changed
-                    --print('updating ', propertyName, ' to ', assetUrl)
-                    instance[propertyName] = assetUrl
-                end
-            else 
-                print('! Unsupported role ' .. piece.role .. ' for piece type: ' .. piece.type)
+                instance[propertyName] = assetUrl
+                continue
             end
 
-            -- todo editable 
+            -- if the property only supports Roblox cloud assets, kick off a saving task and update image property in the next cycle
+            -- example: SurfaceAppearance roughness/metalness/normal map
+            if not imagePropertyConfig['editableImage'] and not imagePropertyConfig['localAsset'] then
+                print('!!!!!!  Not Implemented! kick off a saving task and update image property in the next cycle')
+                continue
+            end 
+
+
+            if imagePropertyConfig['editableImage'] then -- try editable image first, default to local asset otherwise
+                print('set editable image..')
+                local ei = object_fetcher:fetch(piece)
+                if ei == nil then
+                    print('cant fetch image to set Content for ', piece.id)
+                    continue
+                end
+                print('about to apply EditableImage')
+                instance[imagePropertyConfig['editableProperty']] = ei
+            elseif imagePropertyConfig['localAsset'] then
+                print('set local asset..')
+                local assetUrl = 'rbxasset://piece-' .. piece.id .. '-' .. piece.hash .. '.png' 
+                instance[propertyName] = assetUrl
+            end
+
         elseif piece.type == 'mesh' then
             local hasAsset = object_fetcher:pieceHasAsset(piece)
             local newMeshPart
