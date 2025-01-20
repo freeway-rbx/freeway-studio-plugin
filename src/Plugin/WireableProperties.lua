@@ -34,7 +34,7 @@ local wireableProperties: {string: {PropertyData}}  = {
         ImageLabel = {
             Image = {editableImage=false, localAsset=true, editableProperty='ImageContent'}},
         MaterialVariant = {
-            ColorMap = {editableImage=true, localAsset=false}, 
+            ColorMap = {editableImage=false, localAsset=false}, 
             MetalnessMap = {editableImage=false, localAsset=false}, 
             NormalMap = {editableImage=false, localAsset=false}, 
             RoughnessMap = {editableImage=false, localAsset=false}},
