@@ -20,6 +20,7 @@ local object_fetcher = {
     pieces_map = {}, 
     piece_is_wired = {},
     download_queue = {}, 
+    asset_save_queue = {},
     enabled = false
 }
 
@@ -116,7 +117,10 @@ local function updateAssetIdForPieceNetwork(pieceId, hash, assetId)
 end
 
 function object_fetcher:updateAssetIdForPiece(pieceId, hash, assetId)
-    local status, errOrResult = pcall(updateAssetIdForPieceNetwork(pieceId, hash, assetId))
+    local status, errOrResult = pcall(function() 
+        updateAssetIdForPieceNetwork(pieceId, hash, assetId)
+    end)
+        
     if not status then
         return false
     else 
@@ -185,10 +189,87 @@ local downloadThread = task.spawn(function ()
     end 
 end)
 
+
+function saveAsset(object, piece) 
+    local AssetService = game:GetService("AssetService")
+
+    local editableObject = object.object
+    -- add vertices, faces, and uvs to the mesh
+    local assetType = Enum.AssetType.Mesh
+    if piece.type == 'image' then 
+        assetType = Enum.AssetType.Image 
+        editableObject = editableObject.Object
+        print("saveAsset", "Editable Image", editableObject)
+    end
+
+    local requestParameters = {
+        CreatorId = game.Players.LocalPlayer.UserId,
+        CreatorType = Enum.AssetCreatorType.User,
+        Name = piece.name,
+        Description = piece.name .. " saved by Freeway",
+    }
+
+    local ok, result, idOrUploadErr = pcall(function()
+        return AssetService:CreateAssetAsync(editableObject, assetType, requestParameters)
+    end)
+
+    if not ok then
+        warn(`error calling CreateAssetAsync: {result}`)
+        return {ok=false, assetIdOrError = idOrUploadErr, result = result}
+    elseif result == Enum.CreateAssetResult.Success then
+        print(`success, new asset id: {idOrUploadErr}`)
+
+        -- TODO MI: Update asset id right away in wired instances
+        local result = object_fetcher:updateAssetIdForPiece(piece.id, piece.hash, idOrUploadErr)
+
+        if not result then
+            print(`could not update the asset id for piece `, piece.id)
+        else 
+            print(`updated the asset id for piece `, piece.id)	
+            return {ok=true, assetIdOrError = idOrUploadErr}
+        end
+    else
+        warn(`upload error in CreateAssetAsync: {result}, {idOrUploadErr}`)
+        return {ok=false, assetIdOrError = idOrUploadErr, result=result}
+    end
+
+end
+
+
+
+local assetSaveThread = task.spawn(function()
+    while true do
+        if not object_fetcher.enabled then 
+                task.wait(0.5) 
+                continue 
+        end 
+        if #object_fetcher.asset_save_queue > 0 then
+            print('saveassetsthread', 'tick')
+
+            local piece = object_fetcher.asset_save_queue[1]
+            local cached =  object_fetcher.cache[piece.id]
+            if not object_fetcher:pieceHasAsset(piece) then
+                local result = saveAsset(cached, piece)
+                if result.ok then
+                    print('saved asset')                    
+                else
+                    print('error saving asset: ', result, 'removing')
+                end
+            else 
+            end
+            table.remove(object_fetcher.asset_save_queue, 1) -- saved asset!   
+        else
+            task.wait(1) 
+        end
+    end
+end)
+
+
+
 local fetchThread = task.spawn(function()
 
     while true do
-        if object_fetcher.enabled ~= true then 
+        if not object_fetcher.enabled then 
                 task.wait(0.5) 
                 continue 
         end 
@@ -417,6 +498,7 @@ end
 function object_fetcher:stop()
     task.cancel(downloadThread)
     task.cancel(fetchThread)
+    task.cancel(assetSaveThread)
 
 end
 
