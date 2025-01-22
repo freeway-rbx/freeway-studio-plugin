@@ -100,10 +100,29 @@ function object_fetcher:pieceHasAsset(piece)
 	return hasAsset
 end
 
+function object_fetcher:add_to_asset_save_queue(piece)
+    local exists = false
+    for i, queued_piece in object_fetcher.asset_save_queue do
+        if piece.id == queued_piece.id and piece.hash == queued_piece.hash then
+            exists = true
+            break
+        end
+    end
+    if not exists then
+        table.insert(object_fetcher.asset_save_queue, piece)
+    end
+end
+
+local function hasToBeAnAsset(instance, properyName) 
+    local propertyConfig = WireableProperties:get_image_property_configuration(instance.ClassName, properyName)
+    if propertyConfig == nil then return false end
+    return not propertyConfig['editableImage'] and not propertyConfig['localAsset']
+end
 
 function object_fetcher:update_instance_if_needed(instance) 
     local wires = t_u:get_instance_wires(instance)
     update_wired_instances(instance, wires)
+
 end 
 
 local function updateAssetIdForPieceNetwork(pieceId, hash, assetId) 
@@ -401,6 +420,7 @@ end
 function update_wired_instances(instance: Instance, wires: {}): number
     local needsTagsUpdate = false
     local maxTimestamp = -1;
+
     for piece_id, propertyName in wires do 
         -- 1. check if the piece still exists and was recently updated
         local piece = pieces_map[piece_id]
@@ -425,8 +445,8 @@ function update_wired_instances(instance: Instance, wires: {}): number
 
             -- if the property only supports Roblox cloud assets, kick off a saving task and update image property in the next cycle
             -- example: SurfaceAppearance roughness/metalness/normal map
-            if not imagePropertyConfig['editableImage'] and not imagePropertyConfig['localAsset'] then
-                print('!!!!!!  Not Implemented! kick off a saving task and update image property in the next cycle')
+            if hasToBeAnAsset(instance, propertyName) then
+                object_fetcher:add_to_asset_save_queue(piece)
                 continue
             end 
 

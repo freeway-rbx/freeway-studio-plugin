@@ -182,7 +182,7 @@ function Widget:render()
 				LayoutOrder = 1,
 				[React.Event.MouseButton1Click] = function()
 					for _, piece in self.state.pendingSaving do
-						table.insert(self.props.fetcher.asset_save_queue, piece)
+						self.props.fetcher:add_to_asset_save_queue(piece)
 					end
 					print('started saving')
 				end
