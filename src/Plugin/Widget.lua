@@ -84,17 +84,7 @@ function Widget:init()
 
 			-- fetching data, should be externalized and listen to events from object_fetcher
 			local pieces = self.props.fetcher.pieces
-			local piecesMap = self.props.fetcher.pieces_map
-			local pieceIsWired = self.props.fetcher.piece_is_wired
-			local pendingSaving = {}
-
-			for wiredPieceId in pieceIsWired do
-				local p = piecesMap[wiredPieceId]; 
-				if p == nil then continue end
-				if not self.props.fetcher:pieceHasAsset(p) then
-					table.insert(pendingSaving, p) 
-				end
-			end
+			local pendingSaving = self.props.fetcher.pending_save
 
 			local currentPiece = nil
 			if self.state.currentPiece ~= nil 
@@ -168,25 +158,8 @@ function Widget:render()
 					})
 				end
 			}),
-	
-			savePending = #self.state.pendingSaving~=0 and e("TextButton", {
-				Text = 'Save ' .. #self.state.pendingSaving .. ' dynamic piece(s) to Roblox',
-				AutomaticSize = Enum.AutomaticSize.XY,
-				Size = UDim2.new(0, 0, 0, 0),
-				TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
-				BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
-				BorderSizePixel = 0,
-				Font = Enum.Font.BuilderSansBold,
-				TextSize = 20,
-				
-				LayoutOrder = 1,
-				[React.Event.MouseButton1Click] = function()
-					for _, piece in self.state.pendingSaving do
-						self.props.fetcher:add_to_asset_save_queue(piece)
-					end
-					print('started saving')
-				end
-			}),
+			
+			statusPanel = self:renderStatusPanel(), 
 
 			back = self.state.mode == MODE_PIECE_DETAILS and e("TextButton", {
 				Text = '< Back',
@@ -239,6 +212,85 @@ function Widget:render()
 	return element
 end
 
+function Widget:renderStatusPanel()
+
+	local theme = settings().Studio.Theme
+
+	return e("Frame", {
+		Size = UDim2.new(0, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.XY,
+		LayoutOrder = 1, 
+		BackgroundTransparency = 1
+
+	}, {
+		uiListLayout = e("UIListLayout", {
+			Padding = UDim.new(2, 2),
+			HorizontalAlignment = Enum.HorizontalAlignment.Left,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			FillDirection = Enum.FillDirection.Horizontal
+		}),
+		uiPadding = e("UIPadding", {
+			PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
+			PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
+			PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
+			PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
+			
+		}), 
+		-- savingLoadingDots = e(StudioComponents.LoadingDots, {
+		-- 	LayoutOrder = 1,
+		-- 	AutomaticSize = Enum.AutomaticSize.None,
+		-- 	Size = UDim2.new(0, 5, 0, 5),
+		-- }),
+	    	
+		saveIndicatorLabel = #self.props.fetcher.asset_save_queue~=0  and e('TextLabel', {
+			Size = UDim2.new(0, 20, 0, 20),
+			AutomaticSize = Enum.AutomaticSize.XY,
+			Text = 'Saving ' .. #self.props.fetcher.asset_save_queue .. ' asset(s)',
+			Font = Enum.Font.BuilderSansMedium,
+			TextSize = PluginEnum.FontSizeTextPrimary,
+			--TextColor3 = PluginEnum.ColorTextPrimary,
+			BackgroundColor3 = PluginEnum.ColorBackground,
+			TextColor3 = Color3.fromRGB(255, 208, 0),
+
+			BorderSizePixel = 0,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			LayoutOrder = 2
+		}), 
+		-- savingIndicatorLabel = #self.props.fetcher.add_to_asset_save_queue~=0 and e("TextLabel", {
+		-- 	Text = 'Saving ' .. #self.state.pendingSaving .. ' dynamic piece(s) to Roblox',
+		-- 	AutomaticSize = Enum.AutomaticSize.XY,
+		-- 	Size = UDim2.new(0, 70, 0, 0),
+		-- 	TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
+		-- 	BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
+		-- 	BorderSizePixel = 0,
+		-- 	Font = Enum.Font.BuilderSansBold,
+		-- 	TextSize = 20,
+			
+		-- 	LayoutOrder = 2
+		-- }),
+
+
+		savePending = #self.state.pendingSaving~=0 and e("TextButton", {
+			Text = 'Save ' .. #self.state.pendingSaving .. ' dynamic piece(s) to Roblox',
+			AutomaticSize = Enum.AutomaticSize.XY,
+			Size = UDim2.new(0, 70, 0, 0),
+			TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
+			BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
+			BorderSizePixel = 0,
+			Font = Enum.Font.BuilderSansBold,
+			TextSize = 20,
+			
+			LayoutOrder = 3,
+			[React.Event.MouseButton1Click] = function()
+				for _, piece in self.state.pendingSaving do
+					self.props.fetcher:add_to_asset_save_queue(piece)
+				end
+				print('started saving')
+			end
+		}),
+
+	})
+end
 
 function Widget:renderPieceDetails()
 

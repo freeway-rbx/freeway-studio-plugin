@@ -21,6 +21,7 @@ local object_fetcher = {
     piece_is_wired = {},
     download_queue = {}, 
     asset_save_queue = {},
+    pending_save = {},
     enabled = false
 }
 
@@ -56,13 +57,15 @@ local pieces_sync_state : PiecesSyncState = {
 
 
 
--- CollectionService:GetInstanceAddedSignal('wired'):Connect(function(instance)
---     update_instance_if_needed(instance)    
--- end)
+CollectionService:GetInstanceAddedSignal('wired'):Connect(function(instance)
+     --object_fetcher:update_instance_if_needed(instance)
+     print('implement me!')
+end)
 
--- CollectionService:GetInstanceRemovedSignal('wired'):Connect(function(instance)
---     update_instance_if_needed(instance)
--- end)
+CollectionService:GetInstanceRemovedSignal('wired'):Connect(function(instance)
+     --object_fetcher:update_instance_if_needed(instance)
+     print('implement me!')
+end)
 
 local function createPieceNetwork(name, content) 
     
@@ -122,7 +125,7 @@ end
 function object_fetcher:update_instance_if_needed(instance) 
     local wires = t_u:get_instance_wires(instance)
     update_wired_instances(instance, wires)
-
+    
 end 
 
 local function updateAssetIdForPieceNetwork(pieceId, hash, assetId) 
@@ -284,6 +287,24 @@ local assetSaveThread = task.spawn(function()
 end)
 
 
+function add_to_pending_save_if_needed(piece, instance, propertyName)
+    if not object_fetcher:pieceHasAsset(piece) and not hasToBeAnAsset(instance, propertyName) then
+        -- check if already in the pendind save and if not insert
+    end
+end
+function updatePendingSave() 
+    local pending_save = {}
+
+    for wiredPieceId in object_fetcher.piece_is_wired do
+        local p = object_fetcher.pieces_map[wiredPieceId]; 
+        if p == nil then continue end
+        if not object_fetcher:pieceHasAsset(p) then
+            table.insert(pending_save, p) 
+        end
+    end    
+    object_fetcher.pending_save = pending_save
+
+end
 
 local fetchThread = task.spawn(function()
 
@@ -330,6 +351,7 @@ local fetchThread = task.spawn(function()
                 -- for _, p in pieces_map do
                 --     -- print('piece: ' .. p.name .. ', time diff: ' .. (pieces_sync_state.updatedAt - p.updatedAt))
                 -- end
+                updatePendingSave()
             end
             process_pieces(tmp_pieces_map)
         end
@@ -462,7 +484,7 @@ function update_wired_instances(instance: Instance, wires: {}): number
                 instance[imagePropertyConfig['editableProperty']] = ei
             elseif imagePropertyConfig['localAsset'] then
                 print('set local asset..')
-                local assetUrl = 'rbxasset://piece-' .. piece.id .. '-' .. piece.hash .. '.png' 
+                local assetUrl = 'rbxasset://freeway/' .. piece.id .. '-' .. piece.hash .. '.png' 
                 instance[propertyName] = assetUrl
             end
 
