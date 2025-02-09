@@ -22,7 +22,8 @@ local object_fetcher = {
     download_queue = {}, 
     asset_save_queue = {},
     pending_save = {},
-    enabled = false
+    updatedAt = -3,
+    enabled = false, 
 }
 
 export type Piece = {
@@ -50,7 +51,7 @@ type PiecesSyncState = {
     pieces: {[string]: Piece}
 }
 
-local pieces_map = {}
+
 local pieces_sync_state : PiecesSyncState = {
     updatedAt = -1, -- MI: Product opinion: update all wired instances on startup to the most recent pieces values
 }
@@ -124,7 +125,7 @@ end
 
 function object_fetcher:update_instance_if_needed(instance) 
     local wires = t_u:get_instance_wires(instance)
-    update_wired_instances(instance, wires)
+    update_wired_instances(instance, wires, false)
     
 end 
 
@@ -157,7 +158,7 @@ local function fetchFromNetwork(piece)
     local json = HttpService:JSONDecode(res)
 
     
-    
+    -- TODO: MI mark pieces that can't be instantiated a broken, ignore in the future
     if piece.type == 'image' then
         local width = json['width']
         local height = json['height']
@@ -195,7 +196,9 @@ local downloadThread = task.spawn(function ()
         if #object_fetcher.download_queue > 0 then  
             local piece = object_fetcher.download_queue[1]
             local cached =  object_fetcher.cache[piece.id]
-            if cached == nil or cached.hash ~= piece.hash then 
+            local exists = object_fetcher.pieces_map[piece.id] ~= nil
+
+            if exists and (cached == nil or cached.hash ~= piece.hash) then 
                 local status, err = pcall(fetchFromNetwork, piece)    
                 if not status then
                     print('error fetchFromNetwork:', err)
@@ -306,6 +309,31 @@ function updatePendingSave()
 
 end
 
+
+function filterUpdatedAfter(timestamp, pieces) 
+    local recents = {}
+
+    if pieces == nil then return recents end
+    for _, piece in pieces do
+        if get_piece_update_time(piece) > timestamp then
+            table.insert(recents, piece)
+        end
+    end
+    return recents 
+end
+
+function mostRecentTimestampForPieces(timestamp, pieces)
+    if pieces == nil then return timestamp end
+
+    for _, piece in pieces do
+        local piece_ts = get_piece_update_time(piece)
+        if piece_ts > timestamp then
+            timestamp = piece_ts
+        end
+    end
+    return timestamp
+end
+
 local fetchThread = task.spawn(function()
 
     while true do
@@ -319,6 +347,7 @@ local fetchThread = task.spawn(function()
             local json = HttpService:JSONDecode(res)
             local pieces = json :: { Piece }
             if pieces == nil then pieces = {} end
+
             object_fetcher.pieces = pieces
 
             local tmp_pieces_map = {}
@@ -326,12 +355,35 @@ local fetchThread = task.spawn(function()
                 tmp_pieces_map[p.id] = p
             end
             object_fetcher.pieces_map = tmp_pieces_map
-            pieces_map = tmp_pieces_map
-            local function process_pieces(pieces: { [string]: Piece })
+            
+            local recents = filterUpdatedAfter(object_fetcher.updatedAt, pieces)
+
+            local recent_pieces_map = {}
+            for _, p in recents do
+                recent_pieces_map[p.id] = p
+            end
+
+            local function process_recents(recents_map: { [string]: Piece })
+                -- 1. fetch all wired instances
+                local instanceWires = t_u.ts_get_all_wired_in_dm()
+                -- 2. find instances linked to the recents                 
+                for instance, wires in instanceWires do
+                    for piece_id, _ in wires do
+                        if recents_map[piece_id] ~= nil then -- wired to one of the recents
+                            update_wired_instances(instance, wires, false)
+                        end
+                    end 
+                end    
+            end
+
+            
+            process_recents(recent_pieces_map)
+            
+            local function process_pieces()
                 -- 1. fetch all wired instances
                 local instanceWires = t_u.ts_get_all_wired_in_dm()
                 local piece_is_wired = {}
-                for instance, wires in instanceWires do
+                for _, wires in instanceWires do
                     for piece_id, _ in wires do
                         piece_is_wired[piece_id] = true
                     end 
@@ -339,21 +391,18 @@ local fetchThread = task.spawn(function()
                 object_fetcher.piece_is_wired = piece_is_wired
                 
                 -- 2. update wired instance when needed and cleanup wires for missing pieces
-                local maxTimestamp = -1
                 for instance, wires in instanceWires do
-                    local ts = update_wired_instances(instance, wires)
-                    --print('ts ' .. ts .. ', maxTs ' .. maxTimestamp)
-                    if ts > maxTimestamp then maxTimestamp = ts end
+                    update_wired_instances(instance, wires, true)
                 end
-                
-                -- -- 3. update the timestamp
-                -- pieces_sync_state.updatedAt = os.time()
-                -- for _, p in pieces_map do
-                --     -- print('piece: ' .. p.name .. ', time diff: ' .. (pieces_sync_state.updatedAt - p.updatedAt))
-                -- end
+
+                -- 3. Update assets pending saving
                 updatePendingSave()
             end
-            process_pieces(tmp_pieces_map)
+            process_pieces()
+            if object_fetcher.updatedAt ~= mostRecentTimestampForPieces(object_fetcher.updatedAt, recents) then
+                print("updating timestamp: from: ", object_fetcher.updatedAt, 'to:', mostRecentTimestampForPieces(object_fetcher.updatedAt, recents))
+                object_fetcher.updatedAt = mostRecentTimestampForPieces(object_fetcher.updatedAt, recents)
+            end
         end
 
         local RunService = game:GetService("RunService")
@@ -363,7 +412,7 @@ local fetchThread = task.spawn(function()
                 -- MI bubble the error up, display in UI
                 print('error fetching pieces', err)
             end
-            print('tick, is running ', RunService:IsRunning(), RunService:IsRunMode()) -- TODO MI Why it doesn't detect it's running?
+            --print('tick, is running ', RunService:IsRunning(), RunService:IsRunMode()) -- TODO MI Why it doesn't detect it's running?
         end
         task.wait(POLL_RATE)
     
@@ -428,10 +477,10 @@ function get_current_asset_id(piece: Piece): string
 end
 
 function get_piece_update_time(piece: Piece): number 
-    print('get_piece_update_time: ' .. piece.id)
+    --print('get_piece_update_time: ' .. piece.id)
     local uploadedAt = nil 
     if (piece.uploadedAt ~= nil) then uploadedAt = piece.uploadedAt else uploadedAt = piece.updatedAt end
-    print('updatedAt: ' .. piece.updatedAt .. ', uploadedAt: ' .. uploadedAt)
+    --print('updatedAt: ' .. piece.updatedAt .. ', uploadedAt: ' .. uploadedAt)
     if(piece.updatedAt > uploadedAt) 
         then return piece.updatedAt
         else return uploadedAt
@@ -439,19 +488,21 @@ function get_piece_update_time(piece: Piece): number
 
 end
 
-function update_wired_instances(instance: Instance, wires: {}): number
+function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boolean): number
     local needsTagsUpdate = false
-    local maxTimestamp = -1;
 
     for piece_id, propertyName in wires do 
         -- 1. check if the piece still exists and was recently updated
-        local piece = pieces_map[piece_id]
+        local piece = object_fetcher.pieces_map[piece_id]
         if piece == nil then
             print('remove a wire with non-existent piece_id: ' .. piece_id)
+            print('TODO Implement the resetting of the Editable/Local asset')
             wires[piece_id] = nil -- remove wire for missing piece
             needsTagsUpdate = true
             continue
         end
+        if cleanup_only then continue end
+
         -- 2. Update wired instance according to the piece type
         -- 2.1 images. Based on 3 possible image content types set either Roblox asset Id, or local asset id, or editable image
         if piece.type == 'image' then

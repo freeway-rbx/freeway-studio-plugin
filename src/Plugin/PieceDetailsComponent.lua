@@ -270,7 +270,8 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 			TextXAlignment = Enum.TextXAlignment.Left,
 			LayoutOrder = 3
 		}), 
-		saveAsset = self.props.piece.type == 'mesh' and showSaveButton and React.createElement("TextButton", {
+		
+		saveAsset = false and self.props.piece.type == 'mesh' and showSaveButton and React.createElement("TextButton", {
 			AnchorPoint = Vector2.new(0.8, 0.5),
 			LayoutOrder = 4,
 			Text = "Save",
