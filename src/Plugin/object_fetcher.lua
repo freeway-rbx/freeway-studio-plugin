@@ -3,6 +3,7 @@ local HttpService = game:GetService("HttpService")
 local AssetService = game:GetService("AssetService")
 local Packages = script:FindFirstAncestor("Freeway").Packages
 local CollectionService = game:GetService("CollectionService")
+local StudioService = game:GetService("StudioService")
 
 local t_u = require(script.Parent.tags_util)
 local base64 = require(Packages.base64)
@@ -11,6 +12,7 @@ local WireableProperties = require(script.Parent.WireableProperties)
 local POLL_RATE = 3 -- seconds
 
 local BASE_URL = 'http://localhost:3000'
+
 
 
 
@@ -23,6 +25,7 @@ local object_fetcher = {
     asset_save_queue = {},
     pending_save = {},
     updatedAt = -3,
+    relaunched = true,
     enabled = false, 
 }
 
@@ -59,8 +62,8 @@ local pieces_sync_state : PiecesSyncState = {
 
 
 CollectionService:GetInstanceAddedSignal('wired'):Connect(function(instance)
-     --object_fetcher:update_instance_if_needed(instance)
-     print('implement me!')
+    print('object_fetcher:GetInstanceAddedSignal:AddedTag')
+     object_fetcher:update_instance_if_needed(instance)
 end)
 
 CollectionService:GetInstanceRemovedSignal('wired'):Connect(function(instance)
@@ -126,7 +129,6 @@ end
 function object_fetcher:update_instance_if_needed(instance) 
     local wires = t_u:get_instance_wires(instance)
     update_wired_instances(instance, wires, false)
-    
 end 
 
 local function updateAssetIdForPieceNetwork(pieceId, hash, assetId) 
@@ -145,6 +147,7 @@ function object_fetcher:updateAssetIdForPiece(pieceId, hash, assetId)
     end)
         
     if not status then
+        print("Can't update asset id for pieceId: ", pieceId, "error: ", errOrResult)
         return false
     else 
         return true
@@ -201,7 +204,7 @@ local downloadThread = task.spawn(function ()
             if exists and (cached == nil or cached.hash ~= piece.hash) then 
                 local status, err = pcall(fetchFromNetwork, piece)    
                 if not status then
-                    print('error fetchFromNetwork:', err)
+                    print('Can\'t fetch piece ', piece.id, ' from the filesystem. fetchFromNetwork:', err)
                 end 
             else 
 --                print('skipping download, have cached version ')
@@ -226,12 +229,21 @@ function saveAsset(object, piece)
         editableObject = editableObject.Object
         print("saveAsset", "Editable Image", editableObject)
     end
+    local loggedInUserId = StudioService:GetUserId()
+    local resultUserId = loggedInUserId
+    local resultCreatorType = Enum.AssetCreatorType.User
+
+    if game.CreatorType == Enum.CreatorType.Group then
+       resultUserId = game.CreatorId
+       resultCreatorType = Enum.AssetCreatorType.Group 
+    end
+
 
     local requestParameters = {
-        CreatorId = game.Players.LocalPlayer.UserId,
-        CreatorType = Enum.AssetCreatorType.User,
+        CreatorId = resultUserId,
+        CreatorType = resultCreatorType,
         Name = piece.name,
-        Description = piece.name .. " saved by Freeway",
+        Description = piece.name .. ", saved by Freeway",
     }
 
     local ok, result, idOrUploadErr = pcall(function()
@@ -249,6 +261,7 @@ function saveAsset(object, piece)
 
         if not result then
             print(`could not update the asset id for piece `, piece.id)
+            return {ok=true, assetIdOrError = idOrUploadErr}
         else 
             print(`updated the asset id for piece `, piece.id)	
             return {ok=true, assetIdOrError = idOrUploadErr}
@@ -366,7 +379,7 @@ local fetchThread = task.spawn(function()
             local function process_recents(recents_map: { [string]: Piece })
                 -- 1. fetch all wired instances
                 local instanceWires = t_u.ts_get_all_wired_in_dm()
-                -- 2. find instances linked to the recents                 
+                -- 2. find instances wired to the recents                 
                 for instance, wires in instanceWires do
                     for piece_id, _ in wires do
                         if recents_map[piece_id] ~= nil then -- wired to one of the recents
@@ -390,15 +403,17 @@ local fetchThread = task.spawn(function()
                 end
                 object_fetcher.piece_is_wired = piece_is_wired
                 
-                -- 2. update wired instance when needed and cleanup wires for missing pieces
+                -- 2. cleanup wires for missing pieces, and update all if the plugin was just relaunched
                 for instance, wires in instanceWires do
-                    update_wired_instances(instance, wires, true)
+                    update_wired_instances(instance, wires, not object_fetcher.relaunched)
                 end
-
+                object_fetcher.relaunched = false
+                
                 -- 3. Update assets pending saving
                 updatePendingSave()
             end
             process_pieces()
+
             if object_fetcher.updatedAt ~= mostRecentTimestampForPieces(object_fetcher.updatedAt, recents) then
                 print("updating timestamp: from: ", object_fetcher.updatedAt, 'to:', mostRecentTimestampForPieces(object_fetcher.updatedAt, recents))
                 object_fetcher.updatedAt = mostRecentTimestampForPieces(object_fetcher.updatedAt, recents)
@@ -495,7 +510,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
         -- 1. check if the piece still exists and was recently updated
         local piece = object_fetcher.pieces_map[piece_id]
         if piece == nil then
-            print('remove a wire with non-existent piece_id: ' .. piece_id)
+            print('remove a wire with non-existent piece_id: ' .. piece_id, 'cleanup only', cleanup_only)
             print('TODO Implement the resetting of the Editable/Local asset')
             wires[piece_id] = nil -- remove wire for missing piece
             needsTagsUpdate = true

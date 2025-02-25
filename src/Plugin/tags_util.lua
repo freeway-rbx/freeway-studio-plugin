@@ -89,10 +89,10 @@ function tags_util:set_instance_wires(instance: Instance, wires: {})
     if counter == 0 then return
     end
      
-    instance:AddTag(TAG_WIRED)
     local tagsJson = TAG_PREFIX .. HttpService:JSONEncode(wires)
     instance:AddTag(tagsJson)
 
+    instance:AddTag(TAG_WIRED)
 end
 
 
