@@ -27,6 +27,8 @@ local object_fetcher = {
     updatedAt = -3,
     relaunched = true,
     enabled = false, 
+    offline = false,
+    updateAvailable = false -- TODO MI Implement update checker
 }
 
 export type Piece = {
@@ -360,7 +362,7 @@ local fetchThread = task.spawn(function()
             local json = HttpService:JSONDecode(res)
             local pieces = json :: { Piece }
             if pieces == nil then pieces = {} end
-
+            object_fetcher.offline = false
             object_fetcher.pieces = pieces
 
             local tmp_pieces_map = {}
@@ -425,7 +427,8 @@ local fetchThread = task.spawn(function()
             local status, err = pcall(fetchPiecesFromNetwork)    
             if not status then
                 -- MI bubble the error up, display in UI
-                print('error fetching pieces', err)
+                object_fetcher.offline = true
+                print('Please launch Freeway app', err)
             end
             --print('tick, is running ', RunService:IsRunning(), RunService:IsRunMode()) -- TODO MI Why it doesn't detect it's running?
         end

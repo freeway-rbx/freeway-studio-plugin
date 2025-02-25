@@ -241,7 +241,22 @@ function Widget:renderStatusPanel()
 		-- 	AutomaticSize = Enum.AutomaticSize.None,
 		-- 	Size = UDim2.new(0, 5, 0, 5),
 		-- }),
-	    	
+
+		offlineIndicatorLabel = self.props.fetcher.offline  and e('TextLabel', {
+			Size = UDim2.new(0, 20, 0, 20),
+			AutomaticSize = Enum.AutomaticSize.XY,
+			Text = 'Please launch Freeway desktop app',
+			Font = Enum.Font.BuilderSansMedium,
+			TextSize = PluginEnum.FontSizeTextPrimary,
+			--TextColor3 = PluginEnum.ColorTextPrimary,
+			BackgroundColor3 = PluginEnum.ColorBackground,
+			TextColor3 = PluginEnum.ColorTextPrimary,
+			BorderSizePixel = 0,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			LayoutOrder = 2
+		}), 
+
+		
 		saveIndicatorLabel = #self.props.fetcher.asset_save_queue~=0  and e('TextLabel', {
 			Size = UDim2.new(0, 20, 0, 20),
 			AutomaticSize = Enum.AutomaticSize.XY,
@@ -353,8 +368,8 @@ end
 
 
 function Widget:renderList()
-	local instanceWirers = self:renderWirers()
-	
+	-- local instanceWirers = self:renderWirers() TODO MI: disable for the initial release
+	local instanceWirers = {}
 	-- print('render list')
 	if #self.state.selection == 0 and #self.state.pieces == 0 then
 		local theme = settings().Studio.Theme
