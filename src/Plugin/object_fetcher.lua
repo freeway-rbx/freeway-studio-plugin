@@ -113,11 +113,13 @@ function object_fetcher:add_to_asset_save_queue(piece)
     local exists = false
     for i, queued_piece in object_fetcher.asset_save_queue do
         if piece.id == queued_piece.id and piece.hash == queued_piece.hash then
+            print('add_to_asset_save_queue: already in the queue: ', piece.id, ' / ', piece.hash)
             exists = true
             break
         end
     end
     if not exists then
+        print('add_to_asset_save_queue: adding: ', piece.id, ' / ', piece.hash)
         table.insert(object_fetcher.asset_save_queue, piece)
     end
 end
@@ -286,8 +288,35 @@ local assetSaveThread = task.spawn(function()
         if #object_fetcher.asset_save_queue > 0 then
             print('saveassetsthread', 'tick')
 
-            local piece = object_fetcher.asset_save_queue[1]
+            local piece = object_fetcher.asset_save_queue[1] 
+            -- get the most recent piece from the mapping, saving_queue might be stale
+            piece = object_fetcher.pieces_map[piece.id]
+            if piece == nil then 
+                table.remove(object_fetcher.asset_save_queue, 1) -- remove piece that doesn't exist anymore from the saving queue
+                continue
+            end
+
             local cached =  object_fetcher.cache[piece.id]
+            if cached.hash ~= piece.hash then -- new version of the asset is not cached locally
+                --print('saveassetsthread: has mismatch for ', piece.id, 'cached/current: ', cached.hash, '/', piece.hash)
+                -- 1. if it's already queued for download -- let's just wait
+                local downloading = false
+                for i, download_piece in object_fetcher.download_queue do
+                    downloading = download_piece.id == piece.id and download_piece.hash == piece.hash
+                    if downloading then break end
+                end
+                
+                if downloading then 
+                    print('saveassetsthread', 'waiting for ', piece.id, piece.hash, ' to download...') 
+                    task.wait(0.2)
+                    continue 
+                else 
+                    -- TODO MI: add to download queue? 
+                    print('saveassetsthread', 'implement me! Piece content is not cached and is not downloading') 
+                    task.wait(0.2)
+                    continue 
+                end
+            end
             if not object_fetcher:pieceHasAsset(piece) then
                 local result = saveAsset(cached, piece)
                 if result.ok then
@@ -299,7 +328,7 @@ local assetSaveThread = task.spawn(function()
             end
             table.remove(object_fetcher.asset_save_queue, 1) -- saved asset!   
         else
-            task.wait(1) 
+            task.wait(0.5) 
         end
     end
 end)
