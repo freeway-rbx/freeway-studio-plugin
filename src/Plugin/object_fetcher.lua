@@ -407,9 +407,28 @@ local fetchThread = task.spawn(function()
                 recent_pieces_map[p.id] = p
             end
 
+
+            
             local function process_recents(recents_map: { [string]: Piece })
                 -- 1. fetch all wired instances
                 local instanceWires = t_u.ts_get_all_wired_in_dm()
+                -- 1.1 pre-fetch all wired assets
+                for _, wires in instanceWires do 
+                    for piece_id, _ in wires do
+                        local piece_to_fetch = object_fetcher.pieces_map[piece_id]
+                        object_fetcher:fetch(piece_to_fetch)
+                    end
+                end
+                
+                -- 1.2 wait until all assets are downloaded
+                while true do
+                    if #object_fetcher.download_queue == 0 then
+                        break
+                    else
+                        task.wait(0.1)
+                    end 
+                end
+
                 -- 2. find instances wired to the recents                 
                 for instance, wires in instanceWires do
                     for piece_id, _ in wires do
@@ -486,8 +505,20 @@ function RbxToEditableMesh(rbxMesh):EditableMesh
 		id = em:AddNormal(Vector3.new(vn[1], vn[2], vn[3]))
 		table.insert(nID, id)
 	end
-
-	for _, face in rbxMesh.faces do
+    local faces = {}
+    for _, face in rbxMesh.faces do
+        if #face.v == 3 then 
+            table.insert(faces, face)
+        end
+        if #face.v == 4 then
+            -- 1-2-3 / 1-3-4
+            local face1 = {v = {face.v[1], face.v[2], face.v[3]}}
+            local face2 = {v = {face.v[1], face.v[3], face.v[4]}}
+            table.insert(faces, face1)
+            table.insert(faces, face2)
+        end
+    end
+	for _, face in faces do
 		-- v1[/vt1][/vn1] v2[/vt2][/vn2] v3[/vt3][/vn3] ...
 		if #face.v ~= 3 then print('not a tri-face, return') end		
 		id = em:AddTriangle(vID[face.v[1][1]], vID[face.v[2][1]], vID[face.v[3][1]])
