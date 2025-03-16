@@ -21,14 +21,14 @@ local t_u = require(script.Parent.tags_util)
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
 local DEBUG_USE_EDITABLE_IMAGES = true
-local ok, areEditableImagesEnabled = pcall(function()
+-- local ok, areEditableImagesEnabled = pcall(function()
 
-	-- TODO MI check if the SaveAssetAsync beta is enabled
-	-- Instance.new("EditableImage"):WritePixels(Vector2.zero, Vector2.one, { 0, 0, 0, 0 })
-end)
-if not (ok and areEditableImagesEnabled) then
-	DEBUG_USE_EDITABLE_IMAGES = false
-end
+-- 	-- TODO MI check if the SaveAssetAsync beta is enabled
+-- 	-- Instance.new("EditableImage"):WritePixels(Vector2.zero, Vector2.one, { 0, 0, 0, 0 })
+-- end)
+-- if not (ok and areEditableImagesEnabled) then
+-- 	DEBUG_USE_EDITABLE_IMAGES = false
+-- end
 local MODE_LIST = 0
 local MODE_PIECE_DETAILS = 1
 
@@ -78,6 +78,7 @@ function Widget:init()
 	self:setState({
 		selection = Selection:Get(),
 		pieces = {},
+		offline = false,
 		mode = MODE_LIST
 	})
 	self:updateSelectedWirersState()
@@ -99,8 +100,8 @@ function Widget:init()
 			self:setState({
 				pieces = pieces, 
 				pendingSaving = pendingSaving,
-				currentPiece = currentPiece
-
+				currentPiece = currentPiece,
+				offline = self.props.fetcher.offline
 			})
 			task.wait(1)
 		end
@@ -244,7 +245,7 @@ function Widget:renderStatusPanel()
 		-- 	Size = UDim2.new(0, 5, 0, 5),
 		-- }),
 
-		offlineIndicatorLabel = self.props.fetcher.offline  and e('TextLabel', {
+		offlineIndicatorLabel = self.state.offline  and e('TextLabel', {
 			Size = UDim2.new(0, 20, 0, 20),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			Text = 'Please launch Freeway desktop app',

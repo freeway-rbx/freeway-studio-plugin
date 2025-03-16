@@ -286,7 +286,7 @@ local assetSaveThread = task.spawn(function()
                 continue 
         end 
         if #object_fetcher.asset_save_queue > 0 then
-            print('saveassetsthread', 'tick')
+            -- print('saveassetsthread', 'tick')
 
             local piece = object_fetcher.asset_save_queue[1] 
             -- get the most recent piece from the mapping, saving_queue might be stale
@@ -307,7 +307,7 @@ local assetSaveThread = task.spawn(function()
                 end
                 
                 if downloading then 
-                    print('saveassetsthread', 'waiting for ', piece.id, piece.hash, ' to download...') 
+                    -- print('saveassetsthread', 'waiting for ', piece.id, piece.hash, ' to download...') 
                     task.wait(0.2)
                     continue 
                 else 
