@@ -22,7 +22,9 @@ local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
 local DEBUG_USE_EDITABLE_IMAGES = true
 local ok, areEditableImagesEnabled = pcall(function()
-	Instance.new("EditableImage"):WritePixels(Vector2.zero, Vector2.one, { 0, 0, 0, 0 })
+
+	-- TODO MI check if the SaveAssetAsync beta is enabled
+	-- Instance.new("EditableImage"):WritePixels(Vector2.zero, Vector2.one, { 0, 0, 0, 0 })
 end)
 if not (ok and areEditableImagesEnabled) then
 	DEBUG_USE_EDITABLE_IMAGES = false

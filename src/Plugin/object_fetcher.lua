@@ -416,6 +416,10 @@ local fetchThread = task.spawn(function()
                 for _, wires in instanceWires do 
                     for piece_id, _ in wires do
                         local piece_to_fetch = object_fetcher.pieces_map[piece_id]
+                        if(piece_to_fetch == nil) then
+                            -- a piece exists in the place, but is removed from the Freeway folder
+                            continue;
+                        end
                         object_fetcher:fetch(piece_to_fetch)
                     end
                 end
@@ -539,7 +543,7 @@ function object_fetcher:fetch(piece)
         return obj.object 
     end
 
-    print('add piece to queue: ', piece.id)
+    -- print('add piece to queue: ', piece.id)
     table.insert(self.download_queue, piece)
     return nil
 
@@ -564,6 +568,15 @@ function get_piece_update_time(piece: Piece): number
         else return uploadedAt
     end
 
+end
+
+
+function get_extension(inputString)
+    local lastDotIndex = inputString:find("%.[^.]*$")
+    if lastDotIndex then
+        return inputString:sub(lastDotIndex + 1)
+    end
+    return inputString
 end
 
 function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boolean): number
@@ -613,7 +626,12 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
                 instance[imagePropertyConfig['editableProperty']] = ei
             elseif imagePropertyConfig['localAsset'] then
                 print('set local asset..')
-                local assetUrl = 'rbxasset://freeway/' .. piece.id .. '-' .. piece.hash .. '.png' 
+                local extension = 'png'
+                -- local status, parsed_extension = pcall(function() return get_extension(piece.name) end)
+                -- if status then 
+                --     extension = parsed_extension
+                -- end
+                local assetUrl = 'rbxasset://freeway/' .. piece.id .. '-' .. piece.hash .. '.' .. extension
                 instance[propertyName] = assetUrl
             end
 
