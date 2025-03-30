@@ -118,7 +118,7 @@ function PieceDetailsComponent:render()
 	local dmInstanceWirers = {}
 
 
-	local i = 3 
+	local i = 4 
 	local hasSelectionToWire = false
 	for _, wirerModel in state.selectedWirersModel do 
 		-- print('redo wirers')
@@ -164,7 +164,6 @@ function PieceDetailsComponent:render()
 		i = i + 1
 	end
 
-
 	return e("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 0, 0, 0),
@@ -179,12 +178,24 @@ function PieceDetailsComponent:render()
 				HorizontalFlex = Enum.UIFlexAlignment.Fill
 
 			}),
-		}, self:renderPreviewAndName(1), 
+			nameElement = e('TextLabel', {
+				Size = UDim2.new(0, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.XY,
+				Text = self.props.piece.name,
+				Font = Enum.Font.BuilderSansBold,
+				TextSize = PluginEnum.FontSizeTextPrimary,
+				TextColor3 = PluginEnum.ColorTextPrimary,
+				BackgroundColor3 = PluginEnum.ColorBackground,
+				BorderSizePixel = 0,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				LayoutOrder = 1
+			})
+		}, self:renderPreviewAndActions(2), 
 		{
 				selectedHeader =  e("TextLabel", {
 				Size = UDim2.new(1, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
-				LayoutOrder = 2,
+				LayoutOrder = 3,
 				Text = "Wireable Selected Instances:",
 				Font = Enum.Font.BuilderSansBold,
 				TextSize = PluginEnum.FontSizeTextPrimary,
@@ -215,7 +226,7 @@ function PieceDetailsComponent:render()
 end
 
 
-function PieceDetailsComponent:renderPreviewAndName(order: number)
+function PieceDetailsComponent:renderPreviewAndActions(order: number)
 	-- print('render piece details component')
 
 	local content = self.props.fetcher:fetch(self.props.piece)
@@ -227,12 +238,13 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 	local image = 'http://www.roblox.com/asset/?id=92229743995007'
 	if self.props.piece.type == 'image' then image = nil end 	
 
-	return {
+	
+	local previewAndActions =  {
 		e("Frame", {
 			BackgroundTransparency = 1,
 			Size = UDim2.new(0, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.XY,
-			LayoutOrder = self.props.index, 
+			LayoutOrder = order, 
 		}, {
 		uiListLayoutTop = e("UIListLayout", {
 			Padding = UDim.new(0, PluginEnum.PaddingHorizontal),
@@ -258,18 +270,7 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 			Size = UDim2.fromOffset(PluginEnum.PreviewSize, PluginEnum.PreviewSize),
 		  }),
 
-		nameTop = e('TextLabel', {
-			Size = UDim2.new(0, 0, 0, 0),
-			AutomaticSize = Enum.AutomaticSize.XY,
-			Text = self.props.piece.name,
-			Font = Enum.Font.BuilderSansBold,
-			TextSize = PluginEnum.FontSizeTextPrimary,
-			TextColor3 = PluginEnum.ColorTextPrimary,
-			BackgroundColor3 = PluginEnum.ColorBackground,
-			BorderSizePixel = 0,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			LayoutOrder = 3
-		}), 
+	
 		
 		saveAsset = false and self.props.piece.type == 'mesh' and showSaveButton and React.createElement("TextButton", {
 			AnchorPoint = Vector2.new(0.8, 0.5),
@@ -313,9 +314,55 @@ function PieceDetailsComponent:renderPreviewAndName(order: number)
 					warn(`upload error in CreateAssetAsync: {result}, {idOrUploadErr}`)
 				end
 			end,
+		  }),
+
+		  insertAndWire =   e(StudioComponents.Button, {
+			LayoutOrder = 5,
+			Text = "Insert",
+			Size = UDim2.new(0, 30, 0, 30),
+			AutomaticSize = Enum.AutomaticSize.X,
+			OnActivated =  function() 
+				local camera = workspace.CurrentCamera
+
+				local part = nil
+
+				if self.props.piece.type == 'mesh' then
+					part = Instance.new("MeshPart")
+					part.Name = "MeshPart"
+					part.Size = Vector3.new(2, 2, 2)
+					part.CanCollide = true
+					part.Parent = workspace
+					t_u:wire_instance(part, self.props.piece.id, "MeshId")
+				elseif self.props.piece.type == 'image' then
+					part = Instance.new("Part")
+					part.Parent = workspace
+					part.Size = Vector3.new(2, 2, 0.5)
+					part.Name = "Part"
+					part.CanCollide = true
+					local decal = Instance.new("Decal")
+					decal.Parent = part
+					t_u:wire_instance(decal, self.props.piece.id, "Texture")
+				end
+
+				-- Position 10 studs in front of camera
+				local cameraPosition = camera.CFrame.Position
+				local cameraLookVector = camera.CFrame.LookVector
+				local partPosition = cameraPosition + (cameraLookVector * 10)
+				part.Position = partPosition
+
+				Selection:Add({part})
+				self.props.fetcher:update_instance_if_needed(part)
+
+
+			end
 		  })
 
+
 	})
-}
+	}
+
+	return previewAndActions
+		
+
 end
 return PieceDetailsComponent
