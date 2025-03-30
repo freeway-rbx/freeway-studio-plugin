@@ -501,7 +501,7 @@ function Widget:renderPlayground()
 		i = i +1
 	end
 	
-	local elemen = e("ScrollingFrame", {
+	local element = e("ScrollingFrame", {
 			Size = UDim2.new(1, 0, 1, 0),
 			BackgroundTransparency = 1,
 			CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -518,6 +518,6 @@ function Widget:renderPlayground()
 	}
 
 	)
-	return elemen
+	return element
 end
 return Widget
