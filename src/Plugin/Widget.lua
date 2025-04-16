@@ -14,6 +14,7 @@ local e = React.createElement
 local Widget = React.Component:extend("Widget")
 
 local PieceComponent = require(script.Parent.PieceComponent)
+local SceneComponent = require(script.Parent.SceneComponent)
 local PieceDetailsComponent = require(script.Parent.PieceDetailsComponent)
 local PluginEnum = require(script.Parent.Enum)
 local ui_commons = require(script.Parent.ui_commons)
@@ -111,11 +112,11 @@ function Widget:init()
 end
 
 
-
 function Widget:render()
 	
 	local theme = settings().Studio.Theme
-
+	-- if true then return self:renderPlayground2()
+	-- end 
 --	if true then return self:renderPlayground() end
 
 	local element = e('Frame', {				
@@ -397,20 +398,39 @@ function Widget:renderList()
 	local pieceComponents  = {}
 	local k = t_u:table_size(instanceWirers) + 1	
 	for _, piece in self.state.pieces do 
-		local newPieceComponent = e(
-			PieceComponent, 
-			{
-				piece = piece,
-				index = k,
-				fetcher = self.props.fetcher, 
-				onClick = function()
-					self:setState({
-						mode = MODE_PIECE_DETAILS,
-						currentPiece = piece})
-				end, 
-				LayoutOrder = k
-			}
-		)
+		local newPieceComponent = nil
+		if piece.type == 'mesh' then
+			local meta = self.props.fetcher.cache['meta_' .. piece.id]
+			newPieceComponent = e(
+				SceneComponent, 
+				{
+					piece = piece,
+					meta = meta,
+					index = 1,
+					fetcher = self.props.fetcher, 
+					onClick = function()
+						self:setState({
+							mode = MODE_PIECE_DETAILS,
+							currentPiece = {}})
+					end, 
+					LayoutOrder = k
+				})
+		else 
+			newPieceComponent = e(
+				PieceComponent, 
+				{
+					piece = piece,
+					index = k,
+					fetcher = self.props.fetcher, 
+					onClick = function()
+						self:setState({
+							mode = MODE_PIECE_DETAILS,
+							currentPiece = piece})
+					end, 
+					LayoutOrder = k
+				}
+			)
+		end
 		pieceComponents['piece_' .. k] = newPieceComponent
 		k = k + 1
 	end
@@ -429,6 +449,8 @@ function Widget:renderList()
 		})}, instanceWirers, pieceComponents)
 	)
 end
+
+
 
 function Widget:renderPlayground()
 
@@ -520,4 +542,35 @@ function Widget:renderPlayground()
 	)
 	return element
 end
+
+
+function Widget:renderPlayground2()
+
+	local piece = self.props.fetcher.pieces_map['REUS']
+
+	local meta = nil
+	if piece ~= nil then
+		meta = self.props.fetcher.cache['meta_' .. piece.id]
+	end
+	
+
+
+
+	local newSceneComponent = e(
+		SceneComponent, 
+		{
+			piece = piece,
+			meta = meta,
+			index = 1,
+			fetcher = self.props.fetcher, 
+			onClick = function()
+				self:setState({
+					mode = MODE_PIECE_DETAILS,
+					currentPiece = {}})
+			end, 
+			LayoutOrder = 1
+		})
+	return newSceneComponent
+end
+
 return Widget

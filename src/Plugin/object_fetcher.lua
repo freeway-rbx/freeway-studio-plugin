@@ -23,6 +23,7 @@ local object_fetcher = {
     piece_is_wired = {},
     download_queue = {}, 
     asset_save_queue = {},
+    piece_meta_queue = {},
     pending_save = {},
     updatedAt = -3,
     relaunched = true,
@@ -185,7 +186,6 @@ local function fetchFromNetwork(piece)
         local mesh = HttpService:JSONDecode(meshString)
         local em = RbxToEditableMesh(mesh)
         object_fetcher.cache[piece.id] = {object = em, hash = piece.hash}
-        print('cached a mesh')
         return
     end
 
@@ -193,7 +193,6 @@ local function fetchFromNetwork(piece)
 end 
 
 -- download queue handler
-
 local downloadThread = task.spawn(function ()
     while true do
         if object_fetcher.enabled ~= true then 
@@ -215,6 +214,45 @@ local downloadThread = task.spawn(function ()
             end
 
             table.remove(object_fetcher.download_queue, 1)
+        else 
+            task.wait(0.1)
+        end
+    end 
+end)
+
+
+local function fetchPieceMetadataFromNetwork(piece)
+    local url = BASE_URL .. '/api/pieces/' .. piece.id .. '/metadata'
+    print('fetchPieceMetadataFromNetwork URL: ' .. url)
+    local res = HttpService:GetAsync(url)
+    local json = HttpService:JSONDecode(res)
+    json.hash = piece.hash
+    object_fetcher.cache['meta_' .. piece.id] = json
+
+end 
+
+-- metadata queue handles
+local metadataFetcherThread = task.spawn(function ()
+    while true do
+        if object_fetcher.enabled ~= true then 
+            task.wait(0.5) 
+            continue 
+        end 
+        if #object_fetcher.piece_meta_queue > 0 then  
+            local piece = object_fetcher.piece_meta_queue[1]
+            local cached =  object_fetcher.cache['meta_' .. piece.id]
+            print('about to fetch meta from network')
+            if cached == nil or cached.hash ~= piece.hash then 
+                local status, err = pcall(fetchPieceMetadataFromNetwork, piece)    
+                if not status then
+                    print('Can\'t fetch piece metadata ', piece.id, ' from the network(fetchPieceMetadataFromNetwork):', err)
+                end 
+            else 
+--                print('skipping download, have cached version ')
+            end
+
+
+            table.remove(object_fetcher.piece_meta_queue, 1)
         else 
             task.wait(0.1)
         end
@@ -378,6 +416,10 @@ function mostRecentTimestampForPieces(timestamp, pieces)
     return timestamp
 end
 
+local function fetchPieceMetadata(piece)
+    table.insert(object_fetcher.piece_meta_queue, piece)
+end
+
 local fetchThread = task.spawn(function()
 
     while true do
@@ -386,8 +428,10 @@ local fetchThread = task.spawn(function()
                 continue 
         end 
 
+        
         local function fetchPiecesFromNetwork() 
             local res = HttpService:GetAsync(BASE_URL .. '/api/pieces')
+            
             local json = HttpService:JSONDecode(res)
             local pieces = json :: { Piece }
             if pieces == nil then pieces = {} end
@@ -408,8 +452,24 @@ local fetchThread = task.spawn(function()
             end
 
 
+
             
             local function process_recents(recents_map: { [string]: Piece })
+                --0. Download all metas
+                for _, piece in recents_map do
+                    if piece.type == 'mesh' then
+                        fetchPieceMetadata(piece)
+                    end    
+                end
+                -- 0.1 wait until all metas are downloaded
+                while true do
+                    if #object_fetcher.piece_meta_queue == 0 then
+                        break
+                    else
+                        task.wait(0.05)
+                    end 
+                end
+                
                 -- 1. fetch all wired instances
                 local instanceWires = t_u.ts_get_all_wired_in_dm()
                 -- 1.1 pre-fetch all wired assets
@@ -429,7 +489,7 @@ local fetchThread = task.spawn(function()
                     if #object_fetcher.download_queue == 0 then
                         break
                     else
-                        task.wait(0.1)
+                        task.wait(0.05)
                     end 
                 end
 
@@ -443,7 +503,7 @@ local fetchThread = task.spawn(function()
                 end    
             end
 
-            
+
             process_recents(recent_pieces_map)
             
             local function process_pieces()
@@ -688,7 +748,7 @@ function object_fetcher:stop()
     task.cancel(downloadThread)
     task.cancel(fetchThread)
     task.cancel(assetSaveThread)
-
+    task.cancel(metadataFetcherThread)
 end
 
 
