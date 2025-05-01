@@ -230,7 +230,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 	-- print('render piece details component')
 
 	local content = self.props.fetcher:fetch(self.props.piece)
-	local hasAsset = self.props.fetcher:pieceHasAsset(self.props.piece)
+	local hasAsset = self.props.fetcher:objectHasAsset(self.props.piece)
 	local showSaveButton = content ~= nil and not hasAsset
 
 	if self.props.piece.type ~= 'image' then content = nil end

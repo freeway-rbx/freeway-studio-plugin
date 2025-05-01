@@ -10,28 +10,11 @@ local e = React.createElement
 
 local SceneComponent = React.Component:extend("SceneComponent")
 local PluginEnum = require(script.Parent.Enum)
+local StudioComponents = require(Packages.studiocomponents)
+local t_u = require(script.Parent.tags_util)
+local Selection = game:GetService("Selection")
 
 
-export type Piece = {
-    id: string,
-    role: string, -- "asset|editable"
-    type: string, --  "image|mesh|meshtexturepack|pbrpack"
-	name: string,
-	hash: string,
-    dir: string,
-
-    uploads: {
-        {
-            assetId: string,
-            decalId: string,
-            hash: string,
-            operationId: string
-        }
-    },
-    updatedAt: number,
-    uploadedAt: number, 
-    deletedAt: number
-}
 
 
 function SceneComponent:onClickSyncButton()
@@ -110,7 +93,7 @@ function SceneComponent:traverseModel(node, depth, list)
 				TextXAlignment = Enum.TextXAlignment.Left,
 				LayoutOrder = 1
 			}),
-			
+
 			treeNodeElement = e('TextLabel', {
 				Size = UDim2.new(0, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
@@ -123,7 +106,74 @@ function SceneComponent:traverseModel(node, depth, list)
 				TextXAlignment = Enum.TextXAlignment.Left,
 				LayoutOrder = 2
 			}), 
+			insertAndWire =  node.isMesh and e(StudioComponents.Button, {
+				LayoutOrder = 5,
+				Text = "Insert",
+				Size = UDim2.new(0, 30, 0, 30),
+				AutomaticSize = Enum.AutomaticSize.X,
+				OnActivated =  function() 
+					local camera = workspace.CurrentCamera
+					local child = self.props.fetcher:find_child_by_id(self.props.piece, "004-b")
 
+					local partsToUpdate = {}
+					local part = nil
+					
+					if self.props.piece.type == 'mesh' then
+						part = Instance.new("MeshPart")
+						part.Name = node.name
+						part.Size = Vector3.new(2, 2, 2)
+						part.CanCollide = true
+						part.Parent = workspace
+						t_u:wire_instance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
+						local material = self.props.fetcher:get_material_channels_for_mesh(self.props.piece, node.id)
+						local surfaceAppearance = nil;
+						print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
+						if material ~= nil and material.channels ~= nil and #material.channels > 0 then
+							
+							surfaceAppearance = Instance.new("SurfaceAppearance")
+							surfaceAppearance.Parent = part
+							surfaceAppearance.Name = "SurfaceAppearance"
+
+
+							for _, channel in material.channels do
+								local propertyName = "ColorMap"
+								if channel.name == 'n' then
+									propertyName = "NormalMap"
+								elseif channel.name == 'm' then
+									propertyName = "MetalnessMap"
+								elseif channel.name == 'r' then
+									propertyName = "RoughnessMap"
+								end
+
+								t_u:wire_instance(surfaceAppearance, "" .. self.props.piece.id .. ":" .. material.id .. "-" .. channel.name, propertyName)
+							end
+							table.insert(partsToUpdate, surfaceAppearance)
+						end
+
+					elseif self.props.piece.type == 'image' then
+						part = Instance.new("Part")
+						part.Parent = workspace
+						part.Size = Vector3.new(2, 2, 0.5)
+						part.Name = "Part"
+						part.CanCollide = true
+						local decal = Instance.new("Decal")
+						decal.Parent = part
+						t_u:wire_instance(decal, self.props.piece.id, "Texture")
+					end
+	
+					-- Position 10 studs in front of camera
+					local cameraPosition = camera.CFrame.Position
+					local cameraLookVector = camera.CFrame.LookVector
+					local partPosition = cameraPosition + (cameraLookVector * 10)
+					part.Position = partPosition
+	
+					Selection:Set({part})
+					table.insert(partsToUpdate, part)
+
+					task.wait(3)
+					self.props.fetcher:update_instances_if_needed(partsToUpdate)
+				end
+			  })
 		}
 		)
 	})
@@ -143,8 +193,6 @@ end
 
 
 function SceneComponent:render()
-	-- self.props.piece
-	-- selg.props.meta 
 	local model = {
 		name = "", 
 		type = "scene",
@@ -173,12 +221,12 @@ function SceneComponent:render()
 		-- 	{name = "material2", type="material"}
 		-- }
 	}
-	if self.props.meta ~= nil then
+	if self.props.piece.metadata ~= nil then
 		model = {
 			name = self.props.piece.name,
-			children = self.props.meta
+			children = {self.props.piece.metadata}
 		}
-	end
+	end 
 
 	local tree = {}
 	self:traverseModel(model, 0, tree)

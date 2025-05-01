@@ -115,7 +115,7 @@ end
 function Widget:render()
 	
 	local theme = settings().Studio.Theme
-	-- if true then return self:renderPlayground2()
+	-- if true then return self:renderPlayground3()
 	-- end 
 --	if true then return self:renderPlayground() end
 
@@ -302,6 +302,7 @@ function Widget:renderStatusPanel()
 			LayoutOrder = 3,
 			[React.Event.MouseButton1Click] = function()
 				for _, piece in self.state.pendingSaving do
+
 					self.props.fetcher:add_to_asset_save_queue(piece)
 				end
 				print('started saving')
@@ -400,12 +401,10 @@ function Widget:renderList()
 	for _, piece in self.state.pieces do 
 		local newPieceComponent = nil
 		if piece.type == 'mesh' then
-			local meta = self.props.fetcher.cache['meta_' .. piece.id]
 			newPieceComponent = e(
 				SceneComponent, 
 				{
 					piece = piece,
-					meta = meta,
 					index = 1,
 					fetcher = self.props.fetcher, 
 					onClick = function()

@@ -38,7 +38,7 @@ function tags_util:shouldRebuildWirersStat(selectedInstances, instance)
     end
     return updateWirersState
 end
-function tags_util:wire_instance(instance: Instance, piece_id, property)
+function tags_util:wire_instance(instance: Instance, object_id, property)
     local wires = self:get_instance_wires(instance)
 
     -- remove existing wire for property
@@ -48,7 +48,7 @@ function tags_util:wire_instance(instance: Instance, piece_id, property)
             break
         end
     end
-    wires[piece_id] = property
+    wires[object_id] = property
     self:set_instance_wires(instance, wires)
 end
 
@@ -63,7 +63,6 @@ function tags_util:unwire_instance(instance: Instance, property)
     end
     self:set_instance_wires(instance, resulting_wires)
 end
-
 
 
 function tags_util:set_instance_wires(instance: Instance, wires: {})
