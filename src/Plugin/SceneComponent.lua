@@ -106,50 +106,57 @@ function SceneComponent:traverseModel(node, depth, list)
 				TextXAlignment = Enum.TextXAlignment.Left,
 				LayoutOrder = 2
 			}), 
-			insertAndWire =  node.isMesh and e(StudioComponents.Button, {
+			insertAndWire =  (node.isMesh or node.name =='Scene' or node.name == 'root') and e(StudioComponents.Button, {
 				LayoutOrder = 5,
 				Text = "Insert",
 				Size = UDim2.new(0, 30, 0, 30),
 				AutomaticSize = Enum.AutomaticSize.X,
 				OnActivated =  function() 
-					local camera = workspace.CurrentCamera
-					local child = self.props.fetcher:find_child_by_id(self.props.piece, "004-b")
 
+
+
+					local camera = workspace.CurrentCamera
+					-- Position 10 studs in front of camera
+					local cameraPosition = camera.CFrame.Position
+					local cameraLookVector = camera.CFrame.LookVector
+					local partPosition = cameraPosition + (cameraLookVector * 10)
+
+					
 					local partsToUpdate = {}
 					local part = nil
 					
 					if self.props.piece.type == 'mesh' then
-						part = Instance.new("MeshPart")
-						part.Name = node.name
-						part.Size = Vector3.new(2, 2, 2)
-						part.CanCollide = true
-						part.Parent = workspace
-						t_u:wire_instance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
-						local material = self.props.fetcher:get_material_channels_for_mesh(self.props.piece, node.id)
-						local surfaceAppearance = nil;
-						print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
-						if material ~= nil and material.channels ~= nil and #material.channels > 0 then
-							
-							surfaceAppearance = Instance.new("SurfaceAppearance")
-							surfaceAppearance.Parent = part
-							surfaceAppearance.Name = "SurfaceAppearance"
 
-
-							for _, channel in material.channels do
-								local propertyName = "ColorMap"
-								if channel.name == 'n' then
-									propertyName = "NormalMap"
-								elseif channel.name == 'm' then
-									propertyName = "MetalnessMap"
-								elseif channel.name == 'r' then
-									propertyName = "RoughnessMap"
-								end
-
-								t_u:wire_instance(surfaceAppearance, "" .. self.props.piece.id .. ":" .. material.id .. "-" .. channel.name, propertyName)
+						if node.isMesh then
+							part = self:createMeshPart(node, workspace, partsToUpdate)
+							table.insert(partsToUpdate, part)
+							part.Position = partPosition
+							local tr = self.props.fetcher:mesh_translation({id = self.props.piece.id, childId = node.id})
+							if tr ~= nil then
+								part.Position = part.Position + Vector3.new(tr[1], tr[2], tr[3])
+							else 
+								print('mesh translation is nil', {id = self.props.piece.id, childId = node.id})
 							end
-							table.insert(partsToUpdate, surfaceAppearance)
-						end
 
+						else
+							part = Instance.new("Model")
+							part.Parent = workspace
+							part.Name = self.props.piece.name .. ":" .. node.name 
+
+							local meshes = self.props.fetcher:meshes_list(node)
+							for _, mesh in meshes do
+								local meshPart = self:createMeshPart(mesh, part, partsToUpdate)
+								
+								table.insert(partsToUpdate, meshPart)
+								meshPart.Position = partPosition
+								local tr = self.props.fetcher:mesh_translation({id = self.props.piece.id, childId = mesh.id})
+
+								if tr ~= nil then
+									print("TRANSLATION", tr[1], tr[2], tr[3])
+									meshPart.Position = meshPart.Position + Vector3.new(tr[1], tr[2], tr[3])
+								end
+							end
+						end
 					elseif self.props.piece.type == 'image' then
 						part = Instance.new("Part")
 						part.Parent = workspace
@@ -159,18 +166,13 @@ function SceneComponent:traverseModel(node, depth, list)
 						local decal = Instance.new("Decal")
 						decal.Parent = part
 						t_u:wire_instance(decal, self.props.piece.id, "Texture")
+						table.insert(partsToUpdate, part)
+						part.Position = partPosition
+
 					end
 	
-					-- Position 10 studs in front of camera
-					local cameraPosition = camera.CFrame.Position
-					local cameraLookVector = camera.CFrame.LookVector
-					local partPosition = cameraPosition + (cameraLookVector * 10)
-					part.Position = partPosition
-	
 					Selection:Set({part})
-					table.insert(partsToUpdate, part)
 
-					task.wait(3)
 					self.props.fetcher:update_instances_if_needed(partsToUpdate)
 				end
 			  })
@@ -191,6 +193,42 @@ function SceneComponent:traverseModel(node, depth, list)
 		
 end
 
+function SceneComponent:createMeshPart(node, parent, partsToUpdate)
+	local part = nil
+	if self.props.piece.type == 'mesh' then
+		part = Instance.new("MeshPart")
+		part.Name = node.name
+		part.Size = Vector3.new(2, 2, 2)
+		part.CanCollide = true
+		part.Parent = parent
+		t_u:wire_instance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
+		local material = self.props.fetcher:get_material_channels_for_mesh(self.props.piece, node.id)
+		local surfaceAppearance = nil;
+		print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
+		if material ~= nil and material.channels ~= nil and #material.channels > 0 then
+			
+			surfaceAppearance = Instance.new("SurfaceAppearance")
+			surfaceAppearance.Parent = part
+			surfaceAppearance.Name = "SurfaceAppearance"
+
+
+			for _, channel in material.channels do
+				local propertyName = "ColorMap"
+				if channel.name == 'n' then
+					propertyName = "NormalMap"
+				elseif channel.name == 'm' then
+					propertyName = "MetalnessMap"
+				elseif channel.name == 'r' then
+					propertyName = "RoughnessMap"
+				end
+
+				t_u:wire_instance(surfaceAppearance, "" .. self.props.piece.id .. ":" .. material.id .. "-" .. channel.name, propertyName)
+			end
+			table.insert(partsToUpdate, surfaceAppearance)
+		end
+	end
+		return part
+end
 
 function SceneComponent:render()
 	local model = {

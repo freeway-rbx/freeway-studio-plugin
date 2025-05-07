@@ -104,6 +104,7 @@ function Widget:init()
 				currentPiece = currentPiece,
 				offline = self.props.fetcher.offline
 			})
+			-- TODO MI: rewrite using GoodSignal
 			task.wait(1)
 		end
 

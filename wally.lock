@@ -95,7 +95,7 @@ dependencies = []
 [[package]]
 name = "roblox-integrations/freeway"
 version = "0.1.0"
-dependencies = [["CreateSharedToolbar", "stravant/create-shared-toolbar@0.1.0"], ["Cryo", "uglypoe/cryo@1.0.3"], ["React", "jsdotlua/react@17.1.0"], ["ReactRoblox", "jsdotlua/react-roblox@17.1.0"], ["base64", "reselim/base64@3.0.0"], ["studiocomponents", "sircfenner/studiocomponents@1.1.0"]]
+dependencies = [["CreateSharedToolbar", "stravant/create-shared-toolbar@0.1.0"], ["Cryo", "uglypoe/cryo@1.0.3"], ["GoodSignal", "stravant/goodsignal@0.3.0"], ["React", "jsdotlua/react@17.1.0"], ["ReactRoblox", "jsdotlua/react-roblox@17.1.0"], ["base64", "reselim/base64@3.0.0"], ["studiocomponents", "sircfenner/studiocomponents@1.1.0"]]
 
 [[package]]
 name = "sircfenner/studiocomponents"
@@ -105,6 +105,11 @@ dependencies = [["react", "jsdotlua/react@17.1.0"], ["react-roblox", "jsdotlua/r
 [[package]]
 name = "stravant/create-shared-toolbar"
 version = "0.1.0"
+dependencies = []
+
+[[package]]
+name = "stravant/goodsignal"
+version = "0.3.0"
 dependencies = []
 
 [[package]]
