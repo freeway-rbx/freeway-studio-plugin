@@ -593,11 +593,9 @@ local fetchThread = task.spawn(function()
                 task.wait(0.5) 
                 continue 
         end 
-
         
         local function fetchPiecesFromNetwork() 
             local res = HttpService:GetAsync(BASE_URL .. '/api/pieces')
-            
             local json = HttpService:JSONDecode(res)
             local pieces = json :: { Piece }
             if pieces == nil then pieces = {} end
@@ -605,10 +603,12 @@ local fetchThread = task.spawn(function()
             object_fetcher.pieces = pieces
 
             local tmp_pieces_map = {}
+            local counter = 0
             for _, p in pieces do
                 tmp_pieces_map[p.id] = p
+                counter = counter + 1
             end
-            print("reset pieces_map")
+            print("reset pieces_map, ", counter)
             object_fetcher.pieces_map = tmp_pieces_map
             
             local recents = filterUpdatedAfter(object_fetcher.updatedAt, pieces)
@@ -699,7 +699,7 @@ local fetchThread = task.spawn(function()
                 object_fetcher.updatedAt = mostRecentTimestampForPieces(object_fetcher.updatedAt, recents)
             end
         end
-
+        
         local RunService = game:GetService("RunService")
         if not RunService:IsRunning() then 
             local status, err = pcall(fetchPiecesFromNetwork)    
@@ -809,7 +809,7 @@ function get_current_asset(piece: Piece, child_id: String)
     end    
 
     if uploads == nil then return nil end
-    
+
     for i, upload in uploads do
         if upload.hash == hash then
             return upload
@@ -882,7 +882,10 @@ end
 function object_fetcher:object_exists(objectInfo: ObjectInfo)
     local piece = object_fetcher.pieces_map[objectInfo.id]
     if piece == nil then 
-        print("object_existst: piece not found: ", objectInfo.id)
+        print("!!!object_existst: piece not found: ", objectInfo.id)
+        for key, value in object_fetcher.pieces_map do
+            print(key, value)
+        end
         return false end
     if objectInfo.childId ~= nil and not has_child(piece, objectInfo.childId) then 
         print("object_existst: doesn't have child", objectInfo.childId)

@@ -144,7 +144,7 @@ function PieceComponent:render()
 	if self.props.piece.type == 'image' then image = nil end 	
 
 	local wiredLabelTransparency = 1
-	if self.props.fetcher.piece_is_wired[self.props.piece.id] ~= nil then 
+	if self.props.fetcher.object_is_wired[self.props.piece.id] ~= nil then 
 		wiredLabelTransparency = 0
 	end 
 

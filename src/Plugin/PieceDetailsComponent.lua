@@ -114,7 +114,7 @@ end
 function PieceDetailsComponent:render()
 	local state = self.state
 
-	local selectionI nstanceWirers = {}
+	local selectionInstanceWirers = {}
 	local dmInstanceWirers = {}
 
 
