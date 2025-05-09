@@ -20,7 +20,7 @@ local object_fetcher = {
     cache = {},
     pieces = {}, 
     pieces_map = {}, 
-    piece_is_wired = {},
+    object_is_wired = {},
     download_queue = {}, 
     asset_save_queue = {},
     
@@ -541,11 +541,19 @@ end)
 function updatePendingSave() 
     local pending_save = {}
 
-    for wiredPieceId in object_fetcher.piece_is_wired do
-        local p = object_fetcher.pieces_map[wiredPieceId]; 
-        if p == nil then continue end
-        if not object_fetcher:objectHasAsset(p) then
-            table.insert(pending_save, p) 
+    for wiredObjectId in object_fetcher.object_is_wired do
+        local split = string.split(wiredObjectId, ":")
+        local childId = nil
+        
+        if #split > 1 then
+            childId = split[2]
+        end 
+        local objectInfo = object_fetcher:construct_object(split[1], childId)
+
+         
+        if objectInfo == nil then continue end
+        if not object_fetcher:objectHasAsset(objectInfo) then
+            table.insert(pending_save, objectInfo) 
         end
     end    
     object_fetcher.pending_save = pending_save
@@ -667,15 +675,13 @@ local fetchThread = task.spawn(function()
             local function process_pieces()
                 -- 1. fetch all wired instances
                 local instanceWires = t_u.ts_get_all_wired_in_dm()
-                local piece_is_wired = {}
+                local object_is_wired = {}
                 for _, wires in instanceWires do
                     for object_id, _ in wires do
-                        local split = string.split(object_id, ':')
-                        local piece_id = split[1]
-                        piece_is_wired[piece_id] = object_id
+                        object_is_wired[object_id] = true
                     end 
                 end
-                object_fetcher.piece_is_wired = piece_is_wired
+                object_fetcher.object_is_wired = object_is_wired
                 
                 -- 2. cleanup wires for missing pieces, and update all if the plugin was just relaunched
                 for instance, wires in instanceWires do
@@ -802,6 +808,7 @@ function get_current_asset(piece: Piece, child_id: String)
         end
     end    
 
+    if uploads == nil then return nil end
     
     for i, upload in uploads do
         if upload.hash == hash then
