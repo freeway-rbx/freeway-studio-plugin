@@ -996,6 +996,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
             -- if the property only supports Roblox cloud assets, kick off a saving task and update image property in the next cycle
             -- example: SurfaceAppearance roughness/metalness/normal map
             if hasToBeAnAsset(instance, propertyName) then
+                object_fetcher:add_object_to_queue(object, object_fetcher.download_queue, 'download queue')
                 object_fetcher:add_to_asset_save_queue(object)
                 continue
             end 
