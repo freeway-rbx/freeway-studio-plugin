@@ -350,7 +350,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 				local partPosition = cameraPosition + (cameraLookVector * 10)
 				part.Position = partPosition
 
-				Selection:Add({part})
+				Selection:Set({part})
 				self.props.fetcher:update_instance_if_needed(part)
 
 
