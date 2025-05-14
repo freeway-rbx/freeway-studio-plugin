@@ -552,7 +552,8 @@ function updatePendingSave()
 
          
         if objectInfo == nil then continue end
-        if not object_fetcher:objectHasAsset(objectInfo) then
+        local piece = object_fetcher.pieces_map[objectInfo.id]
+        if not object_fetcher:objectHasAsset(piece, objectInfo.childId) then
             table.insert(pending_save, objectInfo) 
         end
     end    

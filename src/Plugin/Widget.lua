@@ -309,6 +309,26 @@ function Widget:renderStatusPanel()
 				print('started saving')
 			end
 		}),
+		-- dumpPending = #self.state.pendingSaving~=0 and e("TextButton", {
+		-- 	Text = 'Print ' .. #self.state.pendingSaving,
+		-- 	AutomaticSize = Enum.AutomaticSize.XY,
+		-- 	Size = UDim2.new(0, 20, 0, 0),
+		-- 	TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
+		-- 	BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
+		-- 	BorderSizePixel = 0,
+		-- 	Font = Enum.Font.BuilderSansBold,
+		-- 	TextSize = 20,
+			
+		-- 	LayoutOrder = 6,
+		-- 	[React.Event.MouseButton1Click] = function()
+		-- 		print("pending saving objects", #self.state.pendingSaving)
+
+		-- 		for _, object in self.state.pendingSaving do
+		-- 			local hasAsset = self.props.fetcher:objectHasAsset(self.props.fetcher.pieces_map[object.id], object.childId)
+		-- 			print("object", object.id, object.childId, hasAsset)
+		-- 		end
+		-- 	end
+		-- }),
 
 	})
 end
