@@ -30,7 +30,7 @@ local object_fetcher = {
     relaunched = true,
     enabled = false, 
     offline = false,
-    updateAvailable = false -- TODO MI Implement update checker
+    updateAvailable = false, -- TODO MI Implement update checker
 }
 
 export type Piece = {
@@ -83,6 +83,31 @@ CollectionService:GetInstanceRemovedSignal('wired'):Connect(function(instance)
      --object_fetcher:update_instance_if_needed(instance)
      print('implement me!')
 end)
+
+
+function object_fetcher:anchor_part_name() 
+    return "~freeway_anchor_do_not_delete"
+end
+
+function object_fetcher:find_anchor_part(instance: Instance)
+    local parent = instance.Parent
+    while parent ~= game do
+        if not parent:IsA("Model") then 
+            parent = parent.Parent 
+            continue
+        end
+
+        local children  = parent:GetChildren()
+        for _, child in children do
+            if child.Name == self:anchor_part_name() then
+                return child
+            end
+        end
+        parent = parent.Parent 
+    end
+    return nil
+end
+
 
 local function createPieceNetwork(name, content) 
     
@@ -1053,6 +1078,11 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
             end
             instance.Size = newMeshPart.MeshSize
             instance:ApplyMesh(newMeshPart)
+            local anchor = object_fetcher:find_anchor_part(instance)
+            if anchor ~= nil then
+                local tr = object_fetcher:mesh_translation(object)
+                instance.Position = anchor.Position + Vector3.new(tr[1], tr[2], tr[3])
+            end
 
         else
             print('! Unsupported Piece type: ' .. piece.type)

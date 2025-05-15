@@ -143,18 +143,25 @@ function SceneComponent:traverseModel(node, depth, list)
 							part.Parent = workspace
 							part.Name = self.props.piece.name .. ":" .. node.name 
 
+
+							local anchor = Instance.new("Part")
+							anchor.Parent = part
+							anchor.Position = partPosition
+							anchor.Size = Vector3.new(0.1, 0.1, 0.1)
+							anchor.Color = Color3.fromRGB(255, 0, 0)
+							anchor.Transparency = 0.5
+							anchor.Name = self.props.fetcher:anchor_part_name()
+							anchor.Locked = true
+							anchor.CanCollide = false
+							anchor.CanTouch = false
+
 							local meshes = self.props.fetcher:meshes_list(node)
 							for _, mesh in meshes do
 								local meshPart = self:createMeshPart(mesh, part, partsToUpdate)
 								
 								table.insert(partsToUpdate, meshPart)
 								meshPart.Position = partPosition
-								local tr = self.props.fetcher:mesh_translation({id = self.props.piece.id, childId = mesh.id})
 
-								if tr ~= nil then
-									print("TRANSLATION", tr[1], tr[2], tr[3])
-									meshPart.Position = meshPart.Position + Vector3.new(tr[1], tr[2], tr[3])
-								end
 							end
 						end
 					elseif self.props.piece.type == 'image' then
