@@ -358,7 +358,6 @@ local function fetchFromNetwork(object: ObjectInfo)
 
     local res = HttpService:GetAsync(url)
     local json = HttpService:JSONDecode(res)
-
     
     -- TODO: MI mark objects that can't be instantiated broken, ignore in the future
     if object.type == 'image' then
@@ -574,8 +573,8 @@ function updatePendingSave()
             childId = split[2]
         end 
         local objectInfo = object_fetcher:construct_object(split[1], childId)
+        object_fetcher:name_object(objectInfo)
 
-         
         if objectInfo == nil then continue end
         local piece = object_fetcher.pieces_map[objectInfo.id]
         if not object_fetcher:objectHasAsset(piece, objectInfo.childId) then
@@ -1114,15 +1113,6 @@ function meshes_list_traverse(node, meshes)
     end
 
 end 
--- function object_fetcher:pause()
---     task.pause(downloadThread)
---     task.pause(fetchThread)
--- end
-
--- function object_fetcher:pause()
---     task.re(downloadThread)
---     task.pause(fetchThread)
--- end
 
 function object_fetcher:setEnabled(enabled)
     print("object_fetcher:setEnabled: ", enabled)
