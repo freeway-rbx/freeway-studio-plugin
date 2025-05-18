@@ -250,7 +250,9 @@ function object_fetcher:add_object_to_queue(object: ObjectInfo, queue: table, qu
     if not exists then
         print('add_object_to_queue: adding to ', queue_name, object.id, ':', object.childId,  object.hash)
         table.insert(queue, object)
-    end
+    else 
+        print('add_object_to_queue: already in the queue: ', queue_name,  object.id, ':', object.childId,  object.hash)
+    end 
 end
 
 
@@ -1020,7 +1022,11 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
             -- if the property only supports Roblox cloud assets, kick off a saving task and update image property in the next cycle
             -- example: SurfaceAppearance roughness/metalness/normal map
             if hasToBeAnAsset(instance, propertyName) then
-                object_fetcher:add_object_to_queue(object, object_fetcher.download_queue, 'download queue')
+--                print('update_wired_instances: add to asset save queue', object.id, object.childId, object.hash, debug.traceback())
+                local cached = object_fetcher.cache[cache_key_for_object(object)]
+                if cached == nil then
+                    object_fetcher:add_object_to_queue(object, object_fetcher.download_queue, 'download queue')
+                end
                 object_fetcher:add_to_asset_save_queue(object)
                 continue
             end 
