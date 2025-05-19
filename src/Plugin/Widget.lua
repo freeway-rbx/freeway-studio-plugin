@@ -14,6 +14,7 @@ local e = React.createElement
 local Widget = React.Component:extend("Widget")
 
 local PieceComponent = require(script.Parent.PieceComponent)
+local SceneComponent = require(script.Parent.SceneComponent)
 local PieceDetailsComponent = require(script.Parent.PieceDetailsComponent)
 local PluginEnum = require(script.Parent.Enum)
 local ui_commons = require(script.Parent.ui_commons)
@@ -103,6 +104,7 @@ function Widget:init()
 				currentPiece = currentPiece,
 				offline = self.props.fetcher.offline
 			})
+			-- TODO MI: rewrite using GoodSignal
 			task.wait(1)
 		end
 
@@ -111,11 +113,11 @@ function Widget:init()
 end
 
 
-
 function Widget:render()
 	
 	local theme = settings().Studio.Theme
-
+	-- if true then return self:renderPlayground3()
+	-- end 
 --	if true then return self:renderPlayground() end
 
 	local element = e('Frame', {				
@@ -301,11 +303,32 @@ function Widget:renderStatusPanel()
 			LayoutOrder = 3,
 			[React.Event.MouseButton1Click] = function()
 				for _, piece in self.state.pendingSaving do
+
 					self.props.fetcher:add_to_asset_save_queue(piece)
 				end
 				print('started saving')
 			end
 		}),
+		-- dumpPending = #self.state.pendingSaving~=0 and e("TextButton", {
+		-- 	Text = 'Print ' .. #self.state.pendingSaving,
+		-- 	AutomaticSize = Enum.AutomaticSize.XY,
+		-- 	Size = UDim2.new(0, 20, 0, 0),
+		-- 	TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
+		-- 	BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
+		-- 	BorderSizePixel = 0,
+		-- 	Font = Enum.Font.BuilderSansBold,
+		-- 	TextSize = 20,
+			
+		-- 	LayoutOrder = 6,
+		-- 	[React.Event.MouseButton1Click] = function()
+		-- 		print("pending saving objects", #self.state.pendingSaving)
+
+		-- 		for _, object in self.state.pendingSaving do
+		-- 			local hasAsset = self.props.fetcher:objectHasAsset(self.props.fetcher.pieces_map[object.id], object.childId)
+		-- 			print("object", object.id, object.childId, hasAsset)
+		-- 		end
+		-- 	end
+		-- }),
 
 	})
 end
@@ -397,20 +420,37 @@ function Widget:renderList()
 	local pieceComponents  = {}
 	local k = t_u:table_size(instanceWirers) + 1	
 	for _, piece in self.state.pieces do 
-		local newPieceComponent = e(
-			PieceComponent, 
-			{
-				piece = piece,
-				index = k,
-				fetcher = self.props.fetcher, 
-				onClick = function()
-					self:setState({
-						mode = MODE_PIECE_DETAILS,
-						currentPiece = piece})
-				end, 
-				LayoutOrder = k
-			}
-		)
+		local newPieceComponent = nil
+		if piece.type == 'mesh' then
+			newPieceComponent = e(
+				SceneComponent, 
+				{
+					piece = piece,
+					index = 1,
+					fetcher = self.props.fetcher, 
+					onClick = function()
+						self:setState({
+							mode = MODE_PIECE_DETAILS,
+							currentPiece = {}})
+					end, 
+					LayoutOrder = k
+				})
+		else 
+			newPieceComponent = e(
+				PieceComponent, 
+				{
+					piece = piece,
+					index = k,
+					fetcher = self.props.fetcher, 
+					onClick = function()
+						self:setState({
+							mode = MODE_PIECE_DETAILS,
+							currentPiece = piece})
+					end, 
+					LayoutOrder = k
+				}
+			)
+		end
 		pieceComponents['piece_' .. k] = newPieceComponent
 		k = k + 1
 	end
@@ -429,6 +469,8 @@ function Widget:renderList()
 		})}, instanceWirers, pieceComponents)
 	)
 end
+
+
 
 function Widget:renderPlayground()
 
@@ -520,4 +562,35 @@ function Widget:renderPlayground()
 	)
 	return element
 end
+
+
+function Widget:renderPlayground2()
+
+	local piece = self.props.fetcher.pieces_map['REUS']
+
+	local meta = nil
+	if piece ~= nil then
+		meta = self.props.fetcher.cache['meta_' .. piece.id]
+	end
+	
+
+
+
+	local newSceneComponent = e(
+		SceneComponent, 
+		{
+			piece = piece,
+			meta = meta,
+			index = 1,
+			fetcher = self.props.fetcher, 
+			onClick = function()
+				self:setState({
+					mode = MODE_PIECE_DETAILS,
+					currentPiece = {}})
+			end, 
+			LayoutOrder = 1
+		})
+	return newSceneComponent
+end
+
 return Widget

@@ -230,7 +230,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 	-- print('render piece details component')
 
 	local content = self.props.fetcher:fetch(self.props.piece)
-	local hasAsset = self.props.fetcher:pieceHasAsset(self.props.piece)
+	local hasAsset = self.props.fetcher:objectHasAsset(self.props.piece)
 	local showSaveButton = content ~= nil and not hasAsset
 
 	if self.props.piece.type ~= 'image' then content = nil end
@@ -350,7 +350,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 				local partPosition = cameraPosition + (cameraLookVector * 10)
 				part.Position = partPosition
 
-				Selection:Add({part})
+				Selection:Set({part})
 				self.props.fetcher:update_instance_if_needed(part)
 
 
