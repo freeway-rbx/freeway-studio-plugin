@@ -251,7 +251,7 @@ function object_fetcher:add_object_to_queue(object: ObjectInfo, queue: table, qu
         print('add_object_to_queue: adding to ', queue_name, object.id, ':', object.childId,  object.hash)
         table.insert(queue, object)
     else 
-       -- print('add_object_to_queue: already in the queue: ', queue_name,  object.id, ':', object.childId,  object.hash)
+        print('add_object_to_queue: already in the queue: ', queue_name,  object.id, ':', object.childId,  object.hash)
     end 
 end
 

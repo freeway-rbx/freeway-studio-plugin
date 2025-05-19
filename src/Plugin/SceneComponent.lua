@@ -142,7 +142,6 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 							part = Instance.new("Model")
 							part.Parent = workspace
 							part.Name = self.props.piece.name .. ":" .. node.name 
-							
 							local childPath = ""
 							for _, item in parents do
 								print("list: ",  item.name .. "/")
@@ -279,6 +278,7 @@ function SceneComponent:render()
 			children = {self.props.piece.metadata}
 		}
 	end 
+
 
 	local tree, parents = {}, {}
 	self:traverseModel(model, 0, tree, parents)
