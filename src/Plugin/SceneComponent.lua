@@ -50,7 +50,7 @@ end
 
 
 
-function SceneComponent:traverseModel(node, depth, list) 
+function SceneComponent:traverseModel(node, depth, list, parents) 
 	local i = 0
 	local offset = ""
 	while i < depth do
@@ -142,7 +142,14 @@ function SceneComponent:traverseModel(node, depth, list)
 							part = Instance.new("Model")
 							part.Parent = workspace
 							part.Name = self.props.piece.name .. ":" .. node.name 
+							
+							local childPath = ""
+							for _, item in parents do
+								print("list: ",  item.name .. "/")
+							end
+							childPath = childPath .. node.name
 
+							t_u:wire_instance(part, self.props.piece.id .. ":" .. childPath, "Model")
 
 							local anchor = Instance.new("Part")
 							anchor.Parent = part
@@ -192,10 +199,10 @@ function SceneComponent:traverseModel(node, depth, list)
 	table.insert(list, e)
 
 	if node.children == nil then return end
-
+	table.insert(parents, node)
 	for key, child in node.children do 
 		if key == 'hash' then continue end
-		self:traverseModel(child, depth+1, list)
+		self:traverseModel(child, depth+1, list, parents)
 	end
 		
 end
@@ -273,8 +280,8 @@ function SceneComponent:render()
 		}
 	end 
 
-	local tree = {}
-	self:traverseModel(model, 0, tree)
+	local tree, parents = {}, {}
+	self:traverseModel(model, 0, tree, parents)
 
 	local nodesMap = {}
 	for i, node in tree do

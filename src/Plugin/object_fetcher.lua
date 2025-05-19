@@ -251,7 +251,7 @@ function object_fetcher:add_object_to_queue(object: ObjectInfo, queue: table, qu
         print('add_object_to_queue: adding to ', queue_name, object.id, ':', object.childId,  object.hash)
         table.insert(queue, object)
     else 
-        print('add_object_to_queue: already in the queue: ', queue_name,  object.id, ':', object.childId,  object.hash)
+       -- print('add_object_to_queue: already in the queue: ', queue_name,  object.id, ':', object.childId,  object.hash)
     end 
 end
 
@@ -826,6 +826,7 @@ function get_current_asset(piece: Piece, child_id: String)
 
     if child_id ~= nil then 
         local child = object_fetcher:find_child_by_id(piece, child_id)
+        if child == nil then return nil end
         hash = child.hash 
         if child.uploads ~= nil then
             uploads = child.uploads
@@ -991,7 +992,13 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
         
         -- 1. check if the piece (and it's child) still exists and was recently updated
         local piece = object_fetcher.pieces_map[piece_id]
-        local missingChild = not object_fetcher:object_exists({id = piece_id, childId = child_id})
+    
+        local missingChild = true
+        if (propertyName ~= "Model") then
+            missingChild = not object_fetcher:object_exists({id = piece_id, childId = child_id})
+        else 
+            continue                            
+        end
 --        print('11update_wired_instances: ', piece_id, child_id, 'missingChild:', missingChild, piece == nil)
         if piece == nil or missingChild then
             print('remove a wire with non-existent object_id: ' .. object_id, 'cleanup only', cleanup_only)
@@ -1011,7 +1018,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
         if object.type == 'image' then
             local imagePropertyConfig = WireableProperties:get_image_property_configuration(instance.ClassName, propertyName)
             local hasAsset = object_fetcher:objectHasAsset(piece, child_id)
-            print(instance.ClassName, propertyName, hasAsset, get_current_asset_id(piece, child_id))
+            -- print(instance.ClassName, propertyName, hasAsset, get_current_asset_id(piece, child_id))
             if hasAsset then
                 local assetId = get_current_asset_id(piece, child_id)
                 local assetUrl = 'rbxassetid://' .. assetId
@@ -1069,14 +1076,14 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 
                 local em = object_fetcher:fetch(object)
                 if em == nil then
-                    print('mesh: waiting for a cached mesh', object.id, object.child_id, object.hash)
+                    print('mesh: waiting for a cached mesh', object.id, object.childId, object.hash)
                     continue
                 end
-                print('mesh: about to apply mesh as Editable', object.id, object.child_id, object.hash)
+                print('mesh: about to apply mesh as Editable', object.id, object.childId, object.hash)
 
                 newMeshPart = AssetService:CreateMeshPartAsync(Content.fromObject(em))
             else
-                print('mesh: about to apply mesh as Asset', object.id, object.child_id, object.hash)
+                print('mesh: about to apply mesh as Asset', object.id, object.childId, object.hash)
                 local assetId = get_current_asset_id(piece, child_id)
                 local assetUrl = 'rbxassetid://' .. assetId
                 newMeshPart = AssetService:CreateMeshPartAsync(Content.fromUri(assetUrl))
@@ -1126,6 +1133,8 @@ function object_fetcher:setEnabled(enabled)
 end
 
 function object_fetcher:stop()
+    print("object_fetcher:stop", "Stopping Freeway...")
+    
     task.cancel(downloadThread)
     task.cancel(fetchThread)
     task.cancel(assetSaveThread)
