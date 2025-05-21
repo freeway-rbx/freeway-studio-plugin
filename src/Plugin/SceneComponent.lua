@@ -153,9 +153,10 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 							local anchor = Instance.new("Part")
 							anchor.Parent = part
 							anchor.Position = partPosition
-							anchor.Size = Vector3.new(0.1, 0.1, 0.1)
+							anchor.Size = Vector3.new(0.001, 0.001, 0.001)
 							anchor.Color = Color3.fromRGB(255, 0, 0)
-							anchor.Transparency = 0.5
+							anchor.Transparency = 1.0
+							anchor.Anchored = true
 							anchor.Name = self.props.fetcher:anchor_part_name()
 							anchor.Locked = true
 							anchor.CanCollide = false
