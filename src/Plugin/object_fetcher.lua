@@ -1079,11 +1079,11 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
                     print('mesh: waiting for a cached mesh', object.id, object.childId, object.hash)
                     continue
                 end
-                print('mesh: about to apply mesh as Editable', object.id, object.childId, object.hash)
+                -- print('mesh: about to apply mesh as Editable', object.id, object.childId, object.hash)
 
                 newMeshPart = AssetService:CreateMeshPartAsync(Content.fromObject(em))
             else
-                print('mesh: about to apply mesh as Asset', object.id, object.childId, object.hash)
+                -- print('mesh: about to apply mesh as Asset', object.id, object.childId, object.hash)
                 local assetId = get_current_asset_id(piece, child_id)
                 local assetUrl = 'rbxassetid://' .. assetId
                 newMeshPart = AssetService:CreateMeshPartAsync(Content.fromUri(assetUrl))
