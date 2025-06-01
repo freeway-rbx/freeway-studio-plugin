@@ -1,4 +1,3 @@
-
 local HttpService = game:GetService("HttpService")
 local AssetService = game:GetService("AssetService")
 local Packages = script:FindFirstAncestor("Freeway").Packages
@@ -91,6 +90,10 @@ end
 
 function object_fetcher:find_anchor_part(instance: Instance)
     local parent = instance.Parent
+    if parent == nil then 
+        print("###parent is nil for instance", instance.Name)
+    end
+
     while parent ~= game do
         if not parent:IsA("Model") then 
             parent = parent.Parent 
@@ -142,6 +145,53 @@ function cache_key_for_object(object: ObjectInfo)
     return key
 end
 
+function object_fetcher:meshes_from_children_traverse(node, meshes)
+
+    if node == nil then return end
+    if node.isMesh then 
+        table.insert(meshes, node)
+        return
+    end
+    for _, child in node.children do
+        object_fetcher:meshes_from_children_traverse(child, meshes)
+    end
+
+end
+
+function object_fetcher:meshes_from_children(children)
+    if children == nil then return nil end
+
+    local meshes = {}
+    for _, child in children do
+        object_fetcher:meshes_from_children_traverse(child, meshes)
+    end
+    return meshes
+end
+
+
+function object_fetcher:find_children_by_path(piece, path)
+    if piece.metadata == nil then return nil end
+    if piece.metadata.children == nil then return nil end
+
+    local split = string.split(path, '/')
+    local current = {piece.metadata}
+    print("### find_children_by_path: split path", HttpService:JSONEncode(split))
+    for _, childName in split do
+        local found = false
+        for _, child in current do
+            if child.name == childName then
+                current = child.children or {}
+                found = true
+                break
+            end
+        end
+        if not found then return {} end
+    end
+
+    local meshes = object_fetcher:meshes_from_children(current)
+    return meshes
+end
+
 function find_child_by_id_traverse(node, child_id)
     if node == nil then return nil end
     
@@ -155,6 +205,8 @@ function find_child_by_id_traverse(node, child_id)
     
     return nil
 end
+
+
 
 -- lookup a mesh or a material by id
 function object_fetcher:find_child_by_id(piece, child_id)
@@ -910,13 +962,13 @@ end
 function object_fetcher:object_exists(objectInfo: ObjectInfo)
     local piece = object_fetcher.pieces_map[objectInfo.id]
     if piece == nil then 
-        print("!!!object_existst: piece not found: ", objectInfo.id)
+        -- print("!!!object_existst: piece not found: ", objectInfo.id)
         for key, value in object_fetcher.pieces_map do
             print(key, value)
         end
         return false end
     if objectInfo.childId ~= nil and not has_child(piece, objectInfo.childId) then 
-        print("object_existst: doesn't have child", objectInfo.childId)
+        -- print("object_existst: doesn't have child", objectInfo.childId)
         return false
     end
     return true
@@ -977,6 +1029,101 @@ function object_fetcher:name_object(object: ObjectInfo)
     end
 end
 
+
+function object_fetcher:create_new_mesh_part(parent: Instance, node: meshNode, piece: Piece)
+
+    local part = Instance.new("MeshPart")
+    part.Name = node.name
+    part.Size = Vector3.new(2, 2, 2)
+    part.CanCollide = true
+    part.Parent = parent
+    t_u:wire_instance(part, "" .. piece.id .. ":" .. node.id, "MeshId")
+    local material = object_fetcher:get_material_channels_for_mesh(piece, node.id)
+    local surfaceAppearance = nil;
+    print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
+    if material ~= nil and material.channels ~= nil and #material.channels > 0 then
+        
+        surfaceAppearance = Instance.new("SurfaceAppearance")
+        surfaceAppearance.Parent = part
+        surfaceAppearance.Name = "SurfaceAppearance"
+
+
+        for _, channel in material.channels do
+            local propertyName = "ColorMap"
+            if channel.name == 'n' then
+                propertyName = "NormalMap"
+            elseif channel.name == 'm' then
+                propertyName = "MetalnessMap"
+            elseif channel.name == 'r' then
+                propertyName = "RoughnessMap"
+            end
+
+            t_u:wire_instance(surfaceAppearance, "" .. piece.id .. ":" .. material.id .. "-" .. channel.name, propertyName)
+        end
+        -- table.insert(partsToUpdate, surfaceAppearance)
+    end
+end
+
+
+function object_fetcher:reset_texture_channel(instance: Instance, propertyName: string): meshNode
+    print('### resetting texture channel', instance, propertyName)
+    local imagePropertyConfig = WireableProperties:get_image_property_configuration(instance.ClassName, propertyName)
+    print('### image prop config', imagePropertyConfig)
+    if imagePropertyConfig['editableProperty'] ~= nil then
+        instance[imagePropertyConfig['editableProperty']] = Content.none
+    end
+
+end
+function object_fetcher:update_material_if_needed(parent: Instance, node: meshNode, piece: Piece)
+    print("## update_material_if_needed")
+    local surfaceAppearance = nil
+    for _, child in parent:GetChildren() do
+        if child:IsA("SurfaceAppearance") then
+            surfaceAppearance = child
+            break
+        end
+    end
+    local material = object_fetcher:get_material_channels_for_mesh(piece, node.id)
+    if (material == nil or material.channels == nil or #material.channels == 0) and surfaceAppearance ~= nil then
+        -- remove surface appearance if no material is found
+        print("## update_material_if_needed REMOVING SURFACE APPEARANCE", material == nil or material.channels == nil or #material.channels == 0)
+        surfaceAppearance:Destroy()
+        return
+    end
+
+    if material ~= nil and material.channels ~= nil and #material.channels > 0 then
+        print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
+        if surfaceAppearance == nil then
+            -- create a new surface appearance if it doesn't exist
+            surfaceAppearance = Instance.new("SurfaceAppearance")
+            surfaceAppearance.Parent = parent
+            surfaceAppearance.Name = "SurfaceAppearance"
+        end
+        surfaceAppearance.Parent = parent
+        local properties = {ColorMap = false, NormalMap = false, MetalnessMap = false, RoughnessMap = false}
+        for _, channel in material.channels do
+            local propertyName = "ColorMap"
+            if channel.name == 'n' then
+                propertyName = "NormalMap"
+            elseif channel.name == 'm' then
+                propertyName = "MetalnessMap"
+            elseif channel.name == 'r' then
+                propertyName = "RoughnessMap"
+            end
+            properties[propertyName] = true
+            t_u:wire_instance(surfaceAppearance, "" .. piece.id .. ":" .. material.id .. "-" .. channel.name, propertyName)
+        end
+        for channelName, state in properties do
+            if not state then
+                -- reset the channel if it is not in the material
+                object_fetcher:reset_texture_channel(surfaceAppearance, channelName)
+            end
+        end
+    end
+end
+
+
+
 function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boolean): number
     local needsTagsUpdate = false
 
@@ -997,7 +1144,67 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
         if (propertyName ~= "Model") then
             missingChild = not object_fetcher:object_exists({id = piece_id, childId = child_id})
         else 
-            continue                            
+            if piece == nil then
+                print('###Model is wired to a piece that does not exist: ' .. piece_id .. ', ' .. child_id)
+                t_u:unwire_instance(instance, propertyName)
+                continue
+            end
+            -- for gltf sub-hierarchies, e.g. scenes or collections, first add/remove mesh parts, add/remove surface appearances
+            -- TODO MI check if the instance is a model
+            local meshes = object_fetcher:find_children_by_path(piece, child_id)
+
+            local mesh_map, mesh_part_state = {}, {}
+            for _, mesh in meshes do
+                mesh_map[mesh.id] = mesh
+                mesh_part_state[mesh.id] = false
+            end
+
+            local removed, inserted = 0, 0
+
+            for _, descendant in instance:GetDescendants() do 
+                    if not t_u:is_instance_wired(descendant) then continue end
+                    local wires = t_u:get_instance_wires(descendant)
+                    if not descendant:IsA('MeshPart') then continue end
+                    for object_id, propertyName in wires do
+                        if propertyName ~= 'MeshId' then continue end
+                        
+                        local split = string.split(object_id, ':')
+                        local piece_id = split[1]
+                        local child_id = nil
+                        if #split > 1 then
+                            child_id = split[2]
+                        end
+                        if piece_id ~= piece.id then continue end
+                        mesh_part_state[child_id] = true
+
+                        if mesh_map[child_id] == nil then
+                            print('## update_wired_instances: removing mesh part', descendant, 'for piece', piece_id, 'child', child_id)
+                            descendant:Destroy()
+                            removed = removed + 1
+                        else 
+                            print("## update_material_if_needed")
+                            object_fetcher:update_material_if_needed(descendant, mesh_map[child_id], piece)
+                        end
+                    end
+                    
+
+
+            end
+            for mesh_id, mesh_part_exists in mesh_part_state do
+                if not mesh_part_exists then
+                    -- insert new mesh part with material 
+                    object_fetcher:create_new_mesh_part(instance, mesh_map[mesh_id], piece)
+                    inserted = inserted + 1
+                end
+            end
+
+            if removed ~= 0 or inserted ~= 0 then
+                print('###updated the model, inserted: ', inserted, 'removed: ', removed)
+            end
+            
+            continue
+
+            
         end
 --        print('11update_wired_instances: ', piece_id, child_id, 'missingChild:', missingChild, piece == nil)
         if piece == nil or missingChild then

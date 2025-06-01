@@ -63,6 +63,11 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 	local font = Enum.Font.BuilderSans
 	if depth == 0 then font = Enum.Font.BuilderSansBold end
 
+	local childPath = ""
+	for _, item in parents do
+		childPath =  childPath .. item.name .. "/"
+	end
+
 
 	local e = e("Frame", {
 		BackgroundTransparency = 1,
@@ -106,14 +111,12 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 				TextXAlignment = Enum.TextXAlignment.Left,
 				LayoutOrder = 2
 			}), 
-			insertAndWire =  (node.isMesh or node.name =='Scene' or node.name == 'root') and e(StudioComponents.Button, {
+			insertAndWire =  e(StudioComponents.Button, {
 				LayoutOrder = 5,
 				Text = "Insert",
 				Size = UDim2.new(0, 30, 0, 30),
 				AutomaticSize = Enum.AutomaticSize.X,
 				OnActivated =  function() 
-
-
 
 					local camera = workspace.CurrentCamera
 					-- Position 10 studs in front of camera
@@ -142,13 +145,8 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 							part = Instance.new("Model")
 							part.Parent = workspace
 							part.Name = self.props.piece.name .. ":" .. node.name 
-							local childPath = ""
-							for _, item in parents do
-								print("list: ",  item.name .. "/")
-							end
 							childPath = childPath .. node.name
 
-							t_u:wire_instance(part, self.props.piece.id .. ":" .. childPath, "Model")
 
 							local anchor = Instance.new("Part")
 							anchor.Parent = part
@@ -170,6 +168,9 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 								meshPart.Position = partPosition
 
 							end
+
+							t_u:wire_instance(part, self.props.piece.id .. ":" .. childPath, "Model")
+
 						end
 					elseif self.props.piece.type == 'image' then
 						part = Instance.new("Part")
@@ -197,9 +198,11 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 	
 
 	table.insert(list, e)
-
+	if depth ~= 0 then
+		table.insert(parents, node)
+	end 
 	if node.children == nil then return end
-	table.insert(parents, node)
+	
 	for key, child in node.children do 
 		if key == 'hash' then continue end
 		self:traverseModel(child, depth+1, list, parents)
@@ -218,7 +221,6 @@ function SceneComponent:createMeshPart(node, parent, partsToUpdate)
 		t_u:wire_instance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
 		local material = self.props.fetcher:get_material_channels_for_mesh(self.props.piece, node.id)
 		local surfaceAppearance = nil;
-		print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
 		if material ~= nil and material.channels ~= nil and #material.channels > 0 then
 			
 			surfaceAppearance = Instance.new("SurfaceAppearance")

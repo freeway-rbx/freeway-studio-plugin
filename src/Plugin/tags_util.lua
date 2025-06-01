@@ -103,6 +103,10 @@ function tags_util:ts_get_all_wired_in_dm(): {[Instance]: {string: string} }
     return instance_wires
 end
 
+function tags_util:is_instance_wired(instance: Instance): boolean
+    return instance:HasTag(TAG_WIRED)
+end
+
 
 
 function tags_util:table_size(tab) 
