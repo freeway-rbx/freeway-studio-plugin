@@ -5,7 +5,7 @@ end
 local RunService = game:GetService("RunService")
 
 if RunService:IsRunning() then
-	print('Don\'t run Freeway in play mode')
+	print("Don't run Freeway in play mode")
 	return
 end
 
@@ -20,13 +20,13 @@ local fetcher = require(Freeway.Plugin.object_fetcher)
 
 local app = React.createElement(App, {
 	plugin = plugin,
-	fetcher = fetcher
+	fetcher = fetcher,
 })
 
 local tree = ReactRoblox.createRoot(Instance.new("Folder"))
 tree:render(ReactRoblox.createPortal(app, game:GetService("CoreGui")))
 
-print('plugin reloaded')
+print("plugin reloaded")
 plugin.Unloading:Connect(function()
 	tree:unmount()
 	fetcher:stop()

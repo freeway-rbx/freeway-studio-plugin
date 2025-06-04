@@ -14,9 +14,6 @@ local StudioComponents = require(Packages.studiocomponents)
 local t_u = require(script.Parent.tags_util)
 local Selection = game:GetService("Selection")
 
-
-
-
 function SceneComponent:onClickSyncButton()
 	local state = self.state
 	local ok, response = pcall(function()
@@ -33,24 +30,19 @@ function SceneComponent:onClickSyncButton()
 	-- end
 end
 
-function SceneComponent:didMount()
-end
+function SceneComponent:didMount() end
 
 function SceneComponent:willUnmount()
 	--self:onClickDisconnectButton()
 end
 
-function SceneComponent:init()
-end
+function SceneComponent:init() end
 
 function SceneComponent:getDerivedStateFromProps(props)
 	return props
 end
 
-
-
-
-function SceneComponent:traverseModel(node, depth, list, parents) 
+function SceneComponent:traverseModel(node, depth, list, parents)
 	local i = 0
 	local offset = ""
 	while i < depth do
@@ -61,20 +53,20 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 	local displayName = node.name
 
 	local font = Enum.Font.BuilderSans
-	if depth == 0 then font = Enum.Font.BuilderSansBold end
+	if depth == 0 then
+		font = Enum.Font.BuilderSansBold
+	end
 
 	local childPath = ""
 	for _, item in parents do
-		childPath =  childPath .. item.name .. "/"
+		childPath = childPath .. item.name .. "/"
 	end
-
 
 	local e = e("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
-		LayoutOrder = #list + 3 
-
+		LayoutOrder = #list + 3,
 	}, {
 		Cryo.Dictionary.join({
 			uiListLayout = e("UIListLayout", {
@@ -82,11 +74,10 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				FillDirection = Enum.FillDirection.Horizontal,
-				HorizontalFlex = Enum.UIFlexAlignment.None
-
-			})
+				HorizontalFlex = Enum.UIFlexAlignment.None,
+			}),
 		}, {
-			offset = e('TextLabel', {
+			offset = e("TextLabel", {
 				Size = UDim2.new(0, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				Text = offset,
@@ -96,10 +87,10 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 				BackgroundColor3 = PluginEnum.ColorBackground,
 				BorderSizePixel = 0,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				LayoutOrder = 1
+				LayoutOrder = 1,
 			}),
 
-			treeNodeElement = e('TextLabel', {
+			treeNodeElement = e("TextLabel", {
 				Size = UDim2.new(0, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				Text = displayName,
@@ -109,44 +100,40 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 				BackgroundColor3 = PluginEnum.ColorBackground,
 				BorderSizePixel = 0,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				LayoutOrder = 2
-			}), 
-			insertAndWire =  e(StudioComponents.Button, {
+				LayoutOrder = 2,
+			}),
+			insertAndWire = e(StudioComponents.Button, {
 				LayoutOrder = 5,
 				Text = "Insert",
 				Size = UDim2.new(0, 30, 0, 30),
 				AutomaticSize = Enum.AutomaticSize.X,
-				OnActivated =  function() 
-
+				OnActivated = function()
 					local camera = workspace.CurrentCamera
 					-- Position 10 studs in front of camera
 					local cameraPosition = camera.CFrame.Position
 					local cameraLookVector = camera.CFrame.LookVector
 					local partPosition = cameraPosition + (cameraLookVector * 10)
 
-					
 					local partsToUpdate = {}
 					local part = nil
-					
-					if self.props.piece.type == 'mesh' then
 
+					if self.props.piece.type == "mesh" then
 						if node.isMesh then
 							part = self:createMeshPart(node, workspace, partsToUpdate)
 							table.insert(partsToUpdate, part)
 							part.Position = partPosition
-							local tr = self.props.fetcher:mesh_translation({id = self.props.piece.id, childId = node.id})
+							local tr =
+								self.props.fetcher:mesh_translation({ id = self.props.piece.id, childId = node.id })
 							if tr ~= nil then
 								part.Position = part.Position + Vector3.new(tr[1], tr[2], tr[3])
-							else 
-								print('mesh translation is nil', {id = self.props.piece.id, childId = node.id})
+							else
+								print("mesh translation is nil", { id = self.props.piece.id, childId = node.id })
 							end
-
 						else
 							part = Instance.new("Model")
 							part.Parent = workspace
-							part.Name = self.props.piece.name .. ":" .. node.name 
+							part.Name = self.props.piece.name .. ":" .. node.name
 							childPath = childPath .. node.name
-
 
 							local anchor = Instance.new("Part")
 							anchor.Parent = part
@@ -163,16 +150,14 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 							local meshes = self.props.fetcher:meshes_list(node)
 							for _, mesh in meshes do
 								local meshPart = self:createMeshPart(mesh, part, partsToUpdate)
-								
+
 								table.insert(partsToUpdate, meshPart)
 								meshPart.Position = partPosition
-
 							end
 
 							t_u:wire_instance(part, self.props.piece.id .. ":" .. childPath, "Model")
-
 						end
-					elseif self.props.piece.type == 'image' then
+					elseif self.props.piece.type == "image" then
 						part = Instance.new("Part")
 						part.Parent = workspace
 						part.Size = Vector3.new(2, 2, 0.5)
@@ -183,36 +168,35 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 						t_u:wire_instance(decal, self.props.piece.id, "Texture")
 						table.insert(partsToUpdate, part)
 						part.Position = partPosition
-
 					end
-	
-					Selection:Set({part})
+
+					Selection:Set({ part })
 
 					self.props.fetcher:update_instances_if_needed(partsToUpdate)
-				end
-			  })
-		}
-		)
+				end,
+			}),
+		}),
 	})
-	
-	
 
 	table.insert(list, e)
 	if depth ~= 0 then
 		table.insert(parents, node)
-	end 
-	if node.children == nil then return end
-	
-	for key, child in node.children do 
-		if key == 'hash' then continue end
-		self:traverseModel(child, depth+1, list, parents)
 	end
-		
+	if node.children == nil then
+		return
+	end
+
+	for key, child in node.children do
+		if key == "hash" then
+			continue
+		end
+		self:traverseModel(child, depth + 1, list, parents)
+	end
 end
 
 function SceneComponent:createMeshPart(node, parent, partsToUpdate)
 	local part = nil
-	if self.props.piece.type == 'mesh' then
+	if self.props.piece.type == "mesh" then
 		part = Instance.new("MeshPart")
 		part.Name = node.name
 		part.Size = Vector3.new(2, 2, 2)
@@ -220,56 +204,58 @@ function SceneComponent:createMeshPart(node, parent, partsToUpdate)
 		part.Parent = parent
 		t_u:wire_instance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
 		local material = self.props.fetcher:get_material_channels_for_mesh(self.props.piece, node.id)
-		local surfaceAppearance = nil;
+		local surfaceAppearance = nil
 		if material ~= nil and material.channels ~= nil and #material.channels > 0 then
-			
 			surfaceAppearance = Instance.new("SurfaceAppearance")
 			surfaceAppearance.Parent = part
 			surfaceAppearance.Name = "SurfaceAppearance"
 
-
 			for _, channel in material.channels do
 				local propertyName = "ColorMap"
-				if channel.name == 'n' then
+				if channel.name == "n" then
 					propertyName = "NormalMap"
-				elseif channel.name == 'm' then
+				elseif channel.name == "m" then
 					propertyName = "MetalnessMap"
-				elseif channel.name == 'r' then
+				elseif channel.name == "r" then
 					propertyName = "RoughnessMap"
 				end
 
-				t_u:wire_instance(surfaceAppearance, "" .. self.props.piece.id .. ":" .. material.id .. "-" .. channel.name, propertyName)
+				t_u:wire_instance(
+					surfaceAppearance,
+					"" .. self.props.piece.id .. ":" .. material.id .. "-" .. channel.name,
+					propertyName
+				)
 			end
 			table.insert(partsToUpdate, surfaceAppearance)
 		end
 	end
-		return part
+	return part
 end
 
 function SceneComponent:render()
 	local model = {
-		name = "", 
+		name = "",
 		type = "scene",
 		-- children = {
 		-- 	{
-		-- 		name = "Group1", 
+		-- 		name = "Group1",
 		-- 		type = "group",
 		-- 		children = {
 		-- 			{
-		-- 				name = "Mesh", 
+		-- 				name = "Mesh",
 		-- 				type = "mesh",
 		-- 				material = "material1",
-		-- 				children = {} 
+		-- 				children = {}
 		-- 			}
-		-- 		} 
-		-- 	}, 
+		-- 		}
+		-- 	},
 		-- 	{
-		-- 		name = "Mesh2", 
+		-- 		name = "Mesh2",
 		-- 		type = "mesh",
 		-- 		material = "material1",
-		-- 		children = {} 
+		-- 		children = {}
 		-- 	}
-		-- }, 
+		-- },
 		-- materials = {
 		-- 	{name = "material1", type="material"},
 		-- 	{name = "material2", type="material"}
@@ -278,10 +264,9 @@ function SceneComponent:render()
 	if self.props.piece.metadata ~= nil then
 		model = {
 			name = self.props.piece.name,
-			children = {self.props.piece.metadata}
+			children = { self.props.piece.metadata },
 		}
-	end 
-
+	end
 
 	local tree, parents = {}, {}
 	self:traverseModel(model, 0, tree, parents)
@@ -295,20 +280,17 @@ function SceneComponent:render()
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
-		LayoutOrder = self.props.index, 
+		LayoutOrder = self.props.index,
 	}, {
 		Cryo.Dictionary.join({
 			uiListLayout = e("UIListLayout", {
 				Padding = UDim.new(0, 10),
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				SortOrder = Enum.SortOrder.LayoutOrder,
-				HorizontalFlex = Enum.UIFlexAlignment.Fill
-
-			})
-		}, nodesMap
-		)
+				HorizontalFlex = Enum.UIFlexAlignment.Fill,
+			}),
+		}, nodesMap),
 	})
-
 end
 
 return SceneComponent
