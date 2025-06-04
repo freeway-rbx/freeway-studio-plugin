@@ -100,6 +100,7 @@ function InstanceWirerComponent:render()
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = self.props.index,
+		BorderSizePixel = 0,
 	}, {
 		Cryo.Dictionary.join({
 			uiListLayout = React.createElement("UIListLayout", {
@@ -153,6 +154,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = i + 1,
 		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
 	}, {
 		Cryo.Dictionary.join({
 			uiListLayout = React.createElement("UIListLayout", {
@@ -274,6 +276,7 @@ function InstanceWirerComponent:renderHeaderAndLink(layoutOrder)
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = layoutOrder,
 		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
 	}, {
 
 		uiListLayout = React.createElement("UIListLayout", {

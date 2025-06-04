@@ -64,6 +64,7 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = #list + 3,
+		BorderSizePixel = 0,
 	}, {
 		Cryo.Dictionary.join({
 			uiListLayout = React.createElement("UIListLayout", {
@@ -278,6 +279,7 @@ function SceneComponent:render()
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = self.props.index,
+		BorderSizePixel = 0,
 	}, {
 		Cryo.Dictionary.join({
 			uiListLayout = React.createElement("UIListLayout", {

@@ -56,6 +56,7 @@ function StudioPluginGui:render()
 		React.createElement("Frame", {
 			Size = UDim2.new(1, 0, 1, 0),
 			Transparency = 1,
+			BorderSizePixel = 0,
 		}, self.props.children),
 		self.pluginGui
 	)

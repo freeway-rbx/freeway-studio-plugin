@@ -69,6 +69,8 @@ function PieceComponent:render_new()
 		AnchorPoint = Vector2.new(0.8, 0.5),
 		Position = UDim2.fromScale(0.459, 0.5),
 		Size = UDim2.fromScale(1, 0.1),
+		BorderSizePixel = 0,
+		BackgroundColor3 = PluginEnum.ColorButtonBackground,
 		Text = "0",
 	}, {
 		frame = React.createElement("Frame", {
@@ -76,6 +78,7 @@ function PieceComponent:render_new()
 			BackgroundColor3 = Color3.fromRGB(240, 248, 51),
 			BackgroundTransparency = 0.7,
 			Size = UDim2.fromScale(0.66, 1),
+			BorderSizePixel = 0,
 		}, {
 			uIListLayout = React.createElement("UIListLayout", {
 				FillDirection = Enum.FillDirection.Horizontal,
@@ -88,6 +91,7 @@ function PieceComponent:render_new()
 				Image = "http://www.roblox.com/asset/?id=699259085",
 				LayoutOrder = 3,
 				Size = UDim2.fromOffset(30, 30),
+				BorderSizePixel = 0,
 			}),
 
 			textLabel = React.createElement("TextLabel", {
@@ -148,8 +152,9 @@ function PieceComponent:render()
 		AnchorPoint = Vector2.new(0.8, 0.5),
 		Position = UDim2.fromScale(0.459, 0.5),
 		Size = UDim2.new(1, 0, 0, 65),
-		BackgroundColor3 = PluginEnum.ColorBackground,
+		BackgroundColor3 = PluginEnum.ColorButtonBackground,
 		BackgroundTransparency = 0,
+		BorderSizePixel = 0,
 		Text = "",
 		[React.Event.MouseButton1Click] = function()
 			self.props.onClick()
@@ -157,15 +162,15 @@ function PieceComponent:render()
 	}, {
 		frame = React.createElement("Frame", {
 			AutomaticSize = Enum.AutomaticSize.XY,
-			BackgroundColor3 = Color3.fromRGB(240, 248, 51),
 			BackgroundTransparency = 1,
 			Size = UDim2.fromScale(1, 1),
+			BorderSizePixel = 0,
 		}, {
 			uIListLayout = React.createElement("UIListLayout", {
 				FillDirection = Enum.FillDirection.Horizontal,
 				Padding = UDim.new(0, 10),
 				SortOrder = Enum.SortOrder.LayoutOrder,
-				VerticalAlignment = Enum.VerticalAlignment.Center,
+				VerticalAlignment = Enum.VerticalAlignment.Top,
 			}),
 
 			imagePreview = content ~= nil and React.createElement("ImageLabel", {

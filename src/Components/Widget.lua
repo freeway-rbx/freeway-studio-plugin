@@ -107,6 +107,7 @@ function Widget:render()
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = 0,
 		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
 	}, {
 		uiListLayout = React.createElement("UIListLayout", {
 			Padding = UDim.new(0, 4),
@@ -181,7 +182,6 @@ function Widget:render()
 			-- 	PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
 			-- 	PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
 			-- 	PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
-
 			-- }),
 			content = if self.state.mode == MODE_LIST then self:renderList() else self:renderPieceDetails(),
 		}),
@@ -198,6 +198,7 @@ function Widget:renderStatusPanel()
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = 1,
 		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
 	}, {
 		uiListLayout = React.createElement("UIListLayout", {
 			Padding = UDim.new(2, 2),
@@ -236,27 +237,21 @@ function Widget:renderStatusPanel()
 			AutomaticSize = Enum.AutomaticSize.XY,
 			Text = "Saving " .. #self.props.fetcher.asset_save_queue .. " asset(s)",
 			Font = Enum.Font.BuilderSansMedium,
-			TextSize = PluginEnum.FontSizeTextPrimary,
-			--TextColor3 = PluginEnum.ColorTextPrimary,
+			TextSize = PluginEnum.FontSizeHeader,
 			BackgroundColor3 = PluginEnum.ColorBackground,
 			TextColor3 = Color3.fromRGB(255, 208, 0),
 
 			BorderSizePixel = 0,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			LayoutOrder = 2,
+		}, {
+			UIPadding = React.createElement("UIPadding", {
+				PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
+				PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
+				PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
+				PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
+			}),
 		}),
-		-- savingIndicatorLabel = #self.props.fetcher.add_to_asset_save_queue~=0 and React.createElement("TextLabel", {
-		-- 	Text = 'Saving ' .. #self.state.pendingSaving .. ' dynamic piece(s) to Roblox',
-		-- 	AutomaticSize = Enum.AutomaticSize.XY,
-		-- 	Size = UDim2.new(0, 70, 0, 0),
-		-- 	TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
-		-- 	BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
-		-- 	BorderSizePixel = 0,
-		-- 	Font = Enum.Font.BuilderSansBold,
-		-- 	TextSize = 20,
-
-		-- 	LayoutOrder = 2
-		-- }),
 
 		savePending = #self.state.pendingSaving ~= 0 and React.createElement("TextButton", {
 			Text = "Save " .. #self.state.pendingSaving .. " dynamic piece(s) to Roblox",
@@ -266,15 +261,24 @@ function Widget:renderStatusPanel()
 			BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
 			BorderSizePixel = 0,
 			Font = Enum.Font.BuilderSansBold,
-			TextSize = 20,
+			TextSize = PluginEnum.FontSizeHeader,
 
 			LayoutOrder = 3,
 			[React.Event.MouseButton1Click] = function()
 				for _, piece in self.state.pendingSaving do
 					self.props.fetcher:add_to_asset_save_queue(piece)
 				end
-				print("started saving")
 			end,
+		}, {
+			UIPadding = React.createElement("UIPadding", {
+				PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
+				PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
+				PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
+				PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
+			}),
+			UICorner = React.createElement("UICorner", {
+				CornerRadius = UDim.new(0, 4),
+			}),
 		}),
 		-- dumpPending = #self.state.pendingSaving~=0 and React.createElement("TextButton", {
 		-- 	Text = 'Print ' .. #self.state.pendingSaving,
@@ -305,6 +309,7 @@ function Widget:renderPieceDetails()
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = 3,
 		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
 	}, {
 		uiListLayout = React.createElement("UIListLayout", {
 			Padding = UDim.new(2, 2),
@@ -422,6 +427,7 @@ function Widget:renderList()
 			AutomaticSize = Enum.AutomaticSize.XY,
 			BackgroundTransparency = 1,
 			LayoutOrder = 3,
+			BorderSizePixel = 0,
 		},
 		Cryo.Dictionary.join({
 			uiListLayout = React.createElement("UIListLayout", {
@@ -442,6 +448,7 @@ function Widget:renderPlayground()
 			BackgroundTransparency = 1,
 			AutomaticSize = Enum.AutomaticSize.XY,
 			LayoutOrder = i,
+			BorderSizePixel = 0,
 		}, {
 			Cryo.Dictionary.join({
 				uiListLayout = React.createElement("UIListLayout", {

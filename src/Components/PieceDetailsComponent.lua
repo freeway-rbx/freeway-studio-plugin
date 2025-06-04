@@ -131,6 +131,7 @@ function PieceDetailsComponent:render()
 			Size = UDim2.new(0, 0, 0, 40),
 			AutomaticSize = Enum.AutomaticSize.X,
 			LayoutOrder = i,
+			BorderSizePixel = 0,
 		}, {
 			label = React.createElement("TextLabel", {
 				Size = UDim2.new(1, 0, 1, 0),
@@ -163,6 +164,7 @@ function PieceDetailsComponent:render()
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = self.props.index,
+		BorderSizePixel = 0,
 	}, {
 		Cryo.Dictionary.join(
 			{
@@ -242,6 +244,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 			Size = UDim2.new(0, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			LayoutOrder = order,
+			BorderSizePixel = 0,
 		}, {
 			uiListLayoutTop = React.createElement("UIListLayout", {
 				Padding = UDim.new(0, PluginEnum.PaddingHorizontal),
