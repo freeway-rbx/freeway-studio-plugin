@@ -1,12 +1,10 @@
 local Freeway = script:FindFirstAncestor("Freeway")
 local Packages = Freeway.Packages
 
-local HttpService = game:GetService("HttpService")
 local Selection = game:GetService("Selection")
 
 local React = require(Packages.React)
 local Cryo = require(Packages.Cryo)
-local StudioComponents = require(Packages.studiocomponents)
 
 local e = React.createElement
 

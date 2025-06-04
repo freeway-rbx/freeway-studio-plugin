@@ -1,7 +1,6 @@
 --!strict
 local Packages = script:FindFirstAncestor("Freeway").Packages
 
-local HttpService = game:GetService("HttpService")
 local Cryo = require(Packages.Cryo)
 
 local React = require(Packages.React)

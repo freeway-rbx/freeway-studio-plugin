@@ -8,7 +8,6 @@ local StudioComponents = require(Packages.studiocomponents)
 
 local Selection = game:GetService("Selection")
 local CollectionService = game:GetService("CollectionService")
-local AssetService = game:GetService("AssetService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local PieceDetailsComponent = React.Component:extend("PieceDetailsComponent")
 
