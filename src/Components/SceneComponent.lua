@@ -50,9 +50,10 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 	local displayName = node.name
 
 	local font = Enum.Font.BuilderSans
-	if depth == 0 then
-		font = Enum.Font.BuilderSansBold
+	if depth == 0 then 
+		font = Enum.Font.BuilderSansBold 
 	end
+	local insertEnabled = depth ~= 0
 
 	local childPath = ""
 	for _, item in parents do
@@ -98,9 +99,9 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 				BackgroundColor3 = PluginEnum.ColorBackground,
 				BorderSizePixel = 0,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				LayoutOrder = 2,
-			}),
-			insertAndWire = React.createElement(StudioComponents.Button, {
+				LayoutOrder = 2
+			}), 
+			insertAndWire = insertEnabled and e(StudioComponents.Button, {
 				LayoutOrder = 5,
 				Text = "Insert",
 				Size = UDim2.new(0, 30, 0, 30),
@@ -200,7 +201,7 @@ function SceneComponent:createMeshPart(node, parent, partsToUpdate)
 		part.Size = Vector3.new(2, 2, 2)
 		part.CanCollide = true
 		part.Parent = parent
-		TagUtils.wireInstance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
+		TagUtils.wireInstance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId", true)
 		local material = self.props.fetcher:get_material_channels_for_mesh(self.props.piece, node.id)
 		local surfaceAppearance = nil
 		if material ~= nil and material.channels ~= nil and #material.channels > 0 then

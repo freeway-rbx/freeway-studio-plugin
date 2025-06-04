@@ -6,6 +6,7 @@ local HttpService = game:GetService("HttpService")
 
 local TAG_WIRED = "wired"
 local TAG_PREFIX = "piece:"
+local DEEP_SUFFIX = ':deep'
 
 local TagUtils = {}
 
@@ -63,30 +64,79 @@ function TagUtils.unwireInstance(instance: Instance, property: string)
 	TagUtils.setInstanceWires(instance, resulting_wires)
 end
 
+
+function TagUtils.isDeepWired(instance: Instance, property: string): boolean
+    local property_wires = getInstanceWiresInternal(instance)
+    for object_id, property in property_wires do
+        local property_replaced, count = string.gsub(property, DEEP_SUFFIX, "")    
+        if property == property_replaced and count > 0 then
+            return true
+        end
+    end    
+
+    return false
+end
+
+
+
+function getInstanceWiresInternal(instance: Instance): {}
+    if not instance:HasTag(TAG_WIRED) then return {} end
+    for _, tag in instance:GetTags() do
+        local replaced, count = string.gsub(tag, TAG_PREFIX, "")
+        if count < 1  then
+            --print('skipping tag ' .. tag)
+            continue
+        end
+        -- todo MI handle json parsing errors
+        local property_wires = HttpService:JSONDecode(replaced) :: {}
+        return property_wires
+    end
+    return {}
+end
+
+
+function TagUtils:setInstanceWiresRespectDeep(instance: Instance, wires: {}, respect_deep: boolean?)
+    -- cleanup tags
+    local current_wires = getInstanceWiresInternal(instance)
+
+    print('set_instance_wires_respect_deep!', wires)
+    instance:RemoveTag(TAG_WIRED)
+    
+    -- re-setup tags
+    local counter = 0;
+    for object_id, property in wires do
+        counter = counter + 1
+        if respect_deep then
+            for current_object_id, current_property in current_wires do
+                local property_replaced, count = string.gsub(current_property, DEEP_SUFFIX, "") 
+                if current_object_id == object_id and property_replaced == property then
+                    if count > 0 then 
+                        wires[object_id] = property .. DEEP_SUFFIX
+                    end
+                    break
+                end
+            end
+        end
+        
+    end
+    
+    if counter == 0 then return
+    end
+
+    local tagsJson = TAG_PREFIX .. HttpService:JSONEncode(wires)
+    instance:AddTag(tagsJson)
+
+    instance:AddTag(TAG_WIRED)
+end    
+
 function TagUtils.setInstanceWires(instance: Instance, wires: {})
-	instance:RemoveTag(TAG_WIRED)
-
-	for _, tag in instance:GetTags() do
-		local _, count = string.gsub(tag, TAG_PREFIX, "")
-		if count < 1 then
-			continue
-		end
-		instance:RemoveTag(tag)
-	end
-
-	-- re-setup tags
-	local counter = 0
-	for _, _ in wires do
-		counter = counter + 1
-	end
-
-	if counter == 0 then
-		return
-	end
-
-	local tagsJson = TAG_PREFIX .. HttpService:JSONEncode(wires)
-	instance:AddTag(tagsJson)
-	instance:AddTag(TAG_WIRED)
+    local property_wires = getInstanceWiresInternal(instance)
+    local cleaned_up = {}
+    for object_id, property in property_wires do
+        property = string.gsub(property, DEEP_SUFFIX, "")    
+        cleaned_up[object_id] = property
+    end    
+    return cleaned_up
 end
 
 function TagUtils.ts_get_all_wired_in_dm(): { [Instance]: { string: string } }
