@@ -1,13 +1,9 @@
 local Freeway = script:FindFirstAncestor("Freeway")
-local Packages = Freeway.Packages
 
-local ReactRoblox = require(Packages.ReactRoblox)
-local React = require(Packages.React)
-local Cryo = require(Packages.Cryo)
-
-local StudioPluginContext = require(script.Parent.StudioPluginContext)
-
-local e = React.createElement
+local Cryo = require(Freeway.Packages.Cryo)
+local React = require(Freeway.Packages.React)
+local ReactRoblox = require(Freeway.Packages.ReactRoblox)
+local StudioPluginContext = require(Freeway.Studio.StudioPluginContext)
 
 local StudioPluginGui = React.PureComponent:extend("StudioPluginGui")
 
@@ -57,7 +53,7 @@ end
 
 function StudioPluginGui:render()
 	return ReactRoblox.createPortal(
-		e("Frame", {
+		React.createElement("Frame", {
 			Size = UDim2.new(1, 0, 1, 0),
 			Transparency = 1,
 		}, self.props.children),
@@ -84,9 +80,9 @@ function StudioPluginGui:willUnmount()
 end
 
 local function StudioPluginGuiWrapper(props)
-	return e(StudioPluginContext.Consumer, {
+	return React.createElement(StudioPluginContext.Consumer, {
 		render = function(plugin)
-			return e(
+			return React.createElement(
 				StudioPluginGui,
 				Cryo.Dictionary.join(props, {
 					plugin = plugin,

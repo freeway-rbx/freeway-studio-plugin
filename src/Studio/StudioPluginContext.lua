@@ -1,7 +1,6 @@
 local Freeway = script:FindFirstAncestor("Freeway")
-local Packages = Freeway.Packages
 
-local React = require(Packages.React)
+local React = require(Freeway.Packages.React)
 
 local StudioPluginContext = React.createContext(nil)
 

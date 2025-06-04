@@ -1,17 +1,15 @@
 --!strict
-local Packages = script:FindFirstAncestor("Freeway").Packages
+local Freeway = script:FindFirstAncestor("Freeway")
 
-local Cryo = require(Packages.Cryo)
+local Selection = game:GetService("Selection")
 
-local React = require(Packages.React)
-
-local e = React.createElement
+local Cryo = require(Freeway.Packages.Cryo)
+local PluginEnum = require(Freeway.Enum)
+local React = require(Freeway.Packages.React)
+local StudioComponents = require(Freeway.Packages.studiocomponents)
+local tags_util = require(Freeway.tags_util)
 
 local SceneComponent = React.Component:extend("SceneComponent")
-local PluginEnum = require(script.Parent.Enum)
-local StudioComponents = require(Packages.studiocomponents)
-local t_u = require(script.Parent.tags_util)
-local Selection = game:GetService("Selection")
 
 function SceneComponent:onClickSyncButton()
 	local state = self.state
@@ -61,14 +59,14 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 		childPath = childPath .. item.name .. "/"
 	end
 
-	local e = e("Frame", {
+	local e = React.createElement("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = #list + 3,
 	}, {
 		Cryo.Dictionary.join({
-			uiListLayout = e("UIListLayout", {
+			uiListLayout = React.createElement("UIListLayout", {
 				Padding = UDim.new(0, 0),
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -76,7 +74,7 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 				HorizontalFlex = Enum.UIFlexAlignment.None,
 			}),
 		}, {
-			offset = e("TextLabel", {
+			offset = React.createElement("TextLabel", {
 				Size = UDim2.new(0, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				Text = offset,
@@ -89,7 +87,7 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 				LayoutOrder = 1,
 			}),
 
-			treeNodeElement = e("TextLabel", {
+			treeNodeElement = React.createElement("TextLabel", {
 				Size = UDim2.new(0, 0, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				Text = displayName,
@@ -101,7 +99,7 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 				TextXAlignment = Enum.TextXAlignment.Left,
 				LayoutOrder = 2,
 			}),
-			insertAndWire = e(StudioComponents.Button, {
+			insertAndWire = React.createElement(StudioComponents.Button, {
 				LayoutOrder = 5,
 				Text = "Insert",
 				Size = UDim2.new(0, 30, 0, 30),
@@ -154,7 +152,7 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 								meshPart.Position = partPosition
 							end
 
-							t_u:wire_instance(part, self.props.piece.id .. ":" .. childPath, "Model")
+							tags_util:wire_instance(part, self.props.piece.id .. ":" .. childPath, "Model")
 						end
 					elseif self.props.piece.type == "image" then
 						part = Instance.new("Part")
@@ -164,7 +162,7 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 						part.CanCollide = true
 						local decal = Instance.new("Decal")
 						decal.Parent = part
-						t_u:wire_instance(decal, self.props.piece.id, "Texture")
+						tags_util:wire_instance(decal, self.props.piece.id, "Texture")
 						table.insert(partsToUpdate, part)
 						part.Position = partPosition
 					end
@@ -201,7 +199,7 @@ function SceneComponent:createMeshPart(node, parent, partsToUpdate)
 		part.Size = Vector3.new(2, 2, 2)
 		part.CanCollide = true
 		part.Parent = parent
-		t_u:wire_instance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
+		tags_util:wire_instance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
 		local material = self.props.fetcher:get_material_channels_for_mesh(self.props.piece, node.id)
 		local surfaceAppearance = nil
 		if material ~= nil and material.channels ~= nil and #material.channels > 0 then
@@ -219,7 +217,7 @@ function SceneComponent:createMeshPart(node, parent, partsToUpdate)
 					propertyName = "RoughnessMap"
 				end
 
-				t_u:wire_instance(
+				tags_util:wire_instance(
 					surfaceAppearance,
 					"" .. self.props.piece.id .. ":" .. material.id .. "-" .. channel.name,
 					propertyName
@@ -275,14 +273,14 @@ function SceneComponent:render()
 		nodesMap["treeNode" .. i] = node
 	end
 
-	return e("Frame", {
+	return React.createElement("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = self.props.index,
 	}, {
 		Cryo.Dictionary.join({
-			uiListLayout = e("UIListLayout", {
+			uiListLayout = React.createElement("UIListLayout", {
 				Padding = UDim.new(0, 10),
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				SortOrder = Enum.SortOrder.LayoutOrder,

@@ -1,20 +1,19 @@
 --!strict
-local Packages = script:FindFirstAncestor("Freeway").Packages
-local React = require(Packages.React)
-local Cryo = require(Packages.Cryo)
-
-local e = React.createElement
-local StudioComponents = require(Packages.studiocomponents)
+local Freeway = script:FindFirstAncestor("Freeway")
 
 local Selection = game:GetService("Selection")
 local CollectionService = game:GetService("CollectionService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
-local PieceDetailsComponent = React.Component:extend("PieceDetailsComponent")
 
-local InstanceWirerComponent = require(script.Parent.InstanceWirerComponent)
-local PluginEnum = require(script.Parent.Enum)
-local t_u = require(script.Parent.tags_util)
-local ui_commons = require(script.Parent.ui_commons)
+local Cryo = require(Freeway.Packages.Cryo)
+local InstanceWirerComponent = require(Freeway.InstanceWirerComponent)
+local PluginEnum = require(Freeway.Enum)
+local React = require(Freeway.Packages.React)
+local StudioComponents = require(Freeway.Packages.studiocomponents)
+local tags_util = require(Freeway.tags_util)
+local ui_commons = require(Freeway.ui_commons)
+
+local PieceDetailsComponent = React.Component:extend("PieceDetailsComponent")
 
 function PieceDetailsComponent:didMount()
 	-- print('PieceDetailsComponent:didMount', self.state.selectedWirersModel)
@@ -32,7 +31,7 @@ function PieceDetailsComponent:init()
 	self:updateDMWirerState()
 
 	CollectionService:GetInstanceAddedSignal("wired"):Connect(function(instance)
-		local updateWirersState = t_u:shouldRebuildWirersStat(Selection:Get(), instance)
+		local updateWirersState = tags_util:shouldRebuildWirersStat(Selection:Get(), instance)
 		if updateWirersState then
 			self:updateSelectedWirersState()
 		end
@@ -40,7 +39,7 @@ function PieceDetailsComponent:init()
 	end)
 
 	CollectionService:GetInstanceRemovedSignal("wired"):Connect(function(instance)
-		local updateWirersState = t_u:shouldRebuildWirersStat(Selection:Get(), instance)
+		local updateWirersState = tags_util:shouldRebuildWirersStat(Selection:Get(), instance)
 		if updateWirersState then
 			self:updateSelectedWirersState()
 		end
@@ -54,7 +53,7 @@ function PieceDetailsComponent:buildWirersModel(instances)
 end
 
 function PieceDetailsComponent:updateDMWirerState()
-	local instancesToWires = t_u.ts_get_all_wired_in_dm()
+	local instancesToWires = tags_util.ts_get_all_wired_in_dm()
 	local instancesWiredToCurrentPiece = {}
 	for instance, wires in instancesToWires do
 		if wires[self.props.piece.id] ~= nil then
@@ -76,7 +75,7 @@ function PieceDetailsComponent.getDerivedStateFromProps(props)
 end
 
 function PieceDetailsComponent:buildInstanceWirerComponent(i, wirerModel, showSelectButton)
-	return e(InstanceWirerComponent, {
+	return React.createElement(InstanceWirerComponent, {
 		index = i,
 		instances = wirerModel.instances,
 		properties = wirerModel.properties,
@@ -90,7 +89,7 @@ function PieceDetailsComponent:buildInstanceWirerComponent(i, wirerModel, showSe
 			local recordingId = ChangeHistoryService:TryBeginRecording("wire")
 			for _, instance in instances do
 				-- print('wire instance', instance, self.props.piece.id, propertyName)
-				t_u:wire_instance(instance, self.props.piece.id, propertyName)
+				tags_util:wire_instance(instance, self.props.piece.id, propertyName)
 				self.props.fetcher:update_instance_if_needed(instance)
 			end
 			ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
@@ -100,7 +99,7 @@ function PieceDetailsComponent:buildInstanceWirerComponent(i, wirerModel, showSe
 
 			for _, instance in instances do
 				-- print('unwire all')
-				t_u:unwire_instance(instance, propertyName)
+				tags_util:unwire_instance(instance, propertyName)
 			end
 			ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
 		end,
@@ -127,13 +126,13 @@ function PieceDetailsComponent:render()
 		if self.props.piece.type == "mesh" then
 			message = "Please select a MeshPart(s) to continue."
 		end
-		local emptyState = e("Frame", {
+		local emptyState = React.createElement("Frame", {
 			BackgroundTransparency = 1,
 			Size = UDim2.new(0, 0, 0, 40),
 			AutomaticSize = Enum.AutomaticSize.X,
 			LayoutOrder = i,
 		}, {
-			label = e("TextLabel", {
+			label = React.createElement("TextLabel", {
 				Size = UDim2.new(1, 0, 1, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				Text = message,
@@ -159,7 +158,7 @@ function PieceDetailsComponent:render()
 		i = i + 1
 	end
 
-	return e("Frame", {
+	return React.createElement("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
@@ -167,13 +166,13 @@ function PieceDetailsComponent:render()
 	}, {
 		Cryo.Dictionary.join(
 			{
-				uiListLayout = e("UIListLayout", {
+				uiListLayout = React.createElement("UIListLayout", {
 					Padding = UDim.new(0, 10),
 					HorizontalAlignment = Enum.HorizontalAlignment.Left,
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					HorizontalFlex = Enum.UIFlexAlignment.Fill,
 				}),
-				nameElement = e("TextLabel", {
+				nameElement = React.createElement("TextLabel", {
 					Size = UDim2.new(0, 0, 0, 0),
 					AutomaticSize = Enum.AutomaticSize.XY,
 					Text = self.props.piece.name,
@@ -188,7 +187,7 @@ function PieceDetailsComponent:render()
 			},
 			self:renderPreviewAndActions(2),
 			{
-				selectedHeader = e("TextLabel", {
+				selectedHeader = React.createElement("TextLabel", {
 					Size = UDim2.new(1, 0, 0, 0),
 					AutomaticSize = Enum.AutomaticSize.XY,
 					LayoutOrder = 3,
@@ -203,7 +202,7 @@ function PieceDetailsComponent:render()
 			},
 			selectionInstanceWirers,
 			{
-				dmWirerHeader = hasDMWires and e("TextLabel", {
+				dmWirerHeader = hasDMWires and React.createElement("TextLabel", {
 					Size = UDim2.new(1, 0, 0, 0),
 					AutomaticSize = Enum.AutomaticSize.XY,
 					LayoutOrder = dmWirersLabelIndex,
@@ -238,20 +237,20 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 	end
 
 	local previewAndActions = {
-		e("Frame", {
+		React.createElement("Frame", {
 			BackgroundTransparency = 1,
 			Size = UDim2.new(0, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			LayoutOrder = order,
 		}, {
-			uiListLayoutTop = e("UIListLayout", {
+			uiListLayoutTop = React.createElement("UIListLayout", {
 				Padding = UDim.new(0, PluginEnum.PaddingHorizontal),
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				VerticalAlignment = Enum.VerticalAlignment.Center,
 				FillDirection = Enum.FillDirection.Horizontal,
 				SortOrder = Enum.SortOrder.LayoutOrder,
 			}),
-			texturePreviewTop = content ~= nil and e("ImageLabel", {
+			texturePreviewTop = content ~= nil and React.createElement("ImageLabel", {
 				Size = UDim2.new(0, PluginEnum.DetailsSize, 0, PluginEnum.DetailsSize),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				BackgroundColor3 = PluginEnum.ColorBackground,
@@ -259,7 +258,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 				ImageContent = content,
 				LayoutOrder = 1,
 			}),
-			imageStaticPreview = image ~= nil and e("ImageLabel", {
+			imageStaticPreview = image ~= nil and React.createElement("ImageLabel", {
 				AutomaticSize = Enum.AutomaticSize.XY,
 				BackgroundColor3 = PluginEnum.ColorBackground,
 				BorderSizePixel = 0,
@@ -314,7 +313,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 				}
 			),
 
-			insertAndWire = e(StudioComponents.Button, {
+			insertAndWire = React.createElement(StudioComponents.Button, {
 				LayoutOrder = 5,
 				Text = "Insert",
 				Size = UDim2.new(0, 30, 0, 30),
@@ -330,7 +329,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 						part.Size = Vector3.new(2, 2, 2)
 						part.CanCollide = true
 						part.Parent = workspace
-						t_u:wire_instance(part, self.props.piece.id, "MeshId")
+						tags_util:wire_instance(part, self.props.piece.id, "MeshId")
 					elseif self.props.piece.type == "image" then
 						part = Instance.new("Part")
 						part.Parent = workspace
@@ -339,7 +338,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 						part.CanCollide = true
 						local decal = Instance.new("Decal")
 						decal.Parent = part
-						t_u:wire_instance(decal, self.props.piece.id, "Texture")
+						tags_util:wire_instance(decal, self.props.piece.id, "Texture")
 					end
 
 					-- Position 10 studs in front of camera

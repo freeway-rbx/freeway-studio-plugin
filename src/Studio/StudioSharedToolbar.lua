@@ -1,13 +1,9 @@
 local Freeway = script:FindFirstAncestor("Freeway")
-local Packages = Freeway.Packages
 
-local React = require(Packages.React)
-local Cryo = require(Packages.Cryo)
-local CreateSharedToolbar = require(Packages.CreateSharedToolbar)
-
-local StudioPluginContext = require(script.Parent.StudioPluginContext)
-
-local e = React.createElement
+local CreateSharedToolbar = require(Freeway.Packages.CreateSharedToolbar)
+local Cryo = require(Freeway.Packages.Cryo)
+local React = require(Freeway.Packages.React)
+local StudioPluginContext = require(Freeway.Studio.StudioPluginContext)
 
 local StudioSharedToolbar = React.Component:extend("StudioSharedToolbar")
 
@@ -52,9 +48,9 @@ function StudioSharedToolbar:didUpdate(lastProps)
 end
 
 local function StudioSharedToolbarWrapper(props)
-	return e(StudioPluginContext.Consumer, {
+	return React.createElement(StudioPluginContext.Consumer, {
 		render = function(plugin)
-			return e(
+			return React.createElement(
 				StudioSharedToolbar,
 				Cryo.Dictionary.join(props, {
 					plugin = plugin,

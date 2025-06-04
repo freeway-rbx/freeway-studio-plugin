@@ -5,18 +5,16 @@ end
 local RunService = game:GetService("RunService")
 
 if RunService:IsRunning() then
-	print("Don't run Freeway in play mode")
+	warn("[FREEWAY] - Don't run Freeway in play mode")
 	return
 end
 
-local Freeway = script:FindFirstAncestor("Freeway")
-local Packages = Freeway.Packages
+local Freeway = script
 
-local React = require(Packages.React)
-local ReactRoblox = require(Packages.ReactRoblox)
-
-local App = require(script.App)
-local fetcher = require(Freeway.Plugin.object_fetcher)
+local App = require(Freeway.App)
+local React = require(Freeway.Packages.React)
+local ReactRoblox = require(Freeway.Packages.ReactRoblox)
+local fetcher = require(Freeway.object_fetcher)
 
 local app = React.createElement(App, {
 	plugin = plugin,
@@ -26,7 +24,6 @@ local app = React.createElement(App, {
 local tree = ReactRoblox.createRoot(Instance.new("Folder"))
 tree:render(ReactRoblox.createPortal(app, game:GetService("CoreGui")))
 
-print("plugin reloaded")
 plugin.Unloading:Connect(function()
 	tree:unmount()
 	fetcher:stop()

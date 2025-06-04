@@ -1,17 +1,11 @@
-local ContentProvider = game:GetService("ContentProvider")
 local Freeway = script:FindFirstAncestor("Freeway")
-local Packages = Freeway.Packages
-local StudioComponents = require(Packages.studiocomponents)
 
-local Cryo = require(Packages.Cryo)
-
-local React = require(Packages.React)
-local Selection = game:GetService("Selection")
-
-local e = React.createElement
+local StudioComponents = require(Freeway.Packages.studiocomponents)
+local Cryo = require(Freeway.Packages.Cryo)
+local React = require(Freeway.Packages.React)
+local PluginEnum = require(Freeway.Enum)
 
 local InstanceWirerComponent = React.Component:extend("InstanceWirerComponent")
-local PluginEnum = require(script.Parent.Enum)
 
 type StateData = {
 	source: Instance?,
@@ -108,7 +102,7 @@ function InstanceWirerComponent:render()
 		LayoutOrder = self.props.index,
 	}, {
 		Cryo.Dictionary.join({
-			uiListLayout = e("UIListLayout", {
+			uiListLayout = React.createElement("UIListLayout", {
 				Padding = UDim.new(0, PluginEnum.PaddingVertical),
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -154,14 +148,14 @@ function InstanceWirerComponent:renderPropertyWires(i)
 		wiredTransparency = 0
 	end
 
-	return e("Frame", {
+	return React.createElement("Frame", {
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = i + 1,
 		BackgroundTransparency = 1,
 	}, {
 		Cryo.Dictionary.join({
-			uiListLayout = e("UIListLayout", {
+			uiListLayout = React.createElement("UIListLayout", {
 				Padding = UDim.new(0, PluginEnum.PaddingHorizontal),
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -170,7 +164,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 				--HorizontalFlex = Enum.UIFlexAlignment.Fill
 			}),
 		}, {
-			uiPadding = e("UIPadding", {
+			uiPadding = React.createElement("UIPadding", {
 				PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
 				PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
 			}),
@@ -189,7 +183,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 				LayoutOrder = 0,
 				TextTransparency = wiredTransparency,
 			}),
-			imagePreview = content == nil and e("ImageLabel", {
+			imagePreview = content == nil and React.createElement("ImageLabel", {
 
 				Size = UDim2.new(0, PluginEnum.PreviewSize, 0, PluginEnum.PreviewSize),
 				AutomaticSize = Enum.AutomaticSize.None,
@@ -198,7 +192,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 
 				LayoutOrder = 1,
 			}),
-			imageLivePreview = content ~= nil and e("ImageLabel", {
+			imageLivePreview = content ~= nil and React.createElement("ImageLabel", {
 
 				Size = UDim2.new(0, PluginEnum.PreviewSize, 0, PluginEnum.PreviewSize),
 				AutomaticSize = Enum.AutomaticSize.None,
@@ -207,13 +201,13 @@ function InstanceWirerComponent:renderPropertyWires(i)
 
 				LayoutOrder = 1,
 			}),
-			name = e(StudioComponents.Label, {
+			name = React.createElement(StudioComponents.Label, {
 				Size = UDim2.new(0, 70, 0, 0),
 				Text = self.props.properties[i],
 				TextXAlignment = Enum.TextXAlignment.Left,
 				LayoutOrder = 2,
 			}),
-			-- name = e('TextLabel', {
+			-- name = React.createElement('TextLabel', {
 			-- 	Size = UDim2.new(0, 0, 0, 0),
 			-- 	AutomaticSize = Enum.AutomaticSize.X,
 			-- 	Text = self.props.properties[i],
@@ -225,7 +219,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 			-- 	TextXAlignment = Enum.TextXAlignment.Left,
 			-- 	LayoutOrder = 2
 			-- }),
-			wireButton = show_wire and e(StudioComponents.Button, {
+			wireButton = show_wire and React.createElement(StudioComponents.Button, {
 				Text = wireLabel,
 				AutomaticSize = Enum.AutomaticSize.X,
 				LayoutOrder = 3,
@@ -233,7 +227,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 					self.props.onClick(self.props.instances, self.props.properties[i])
 				end,
 			}),
-			-- wireButton = show_wire and e("TextButton", {
+			-- wireButton = show_wire and React.createElement("TextButton", {
 			-- 	Text = wireLabel,
 			-- 	AutomaticSize = Enum.AutomaticSize.XY,
 			-- 	Size = UDim2.new(0, 0, 0, 0),
@@ -247,7 +241,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 			-- 		self.props.onClick(self.props.instances, self.props.properties[i])
 			-- 	end,
 			-- }),
-			unwireButton = e(StudioComponents.Button, {
+			unwireButton = React.createElement(StudioComponents.Button, {
 				Text = unwireLabel,
 				AutomaticSize = Enum.AutomaticSize.X,
 
@@ -256,7 +250,7 @@ function InstanceWirerComponent:renderPropertyWires(i)
 					self.props.onUwireClick(self.props.instances, self.props.properties[i])
 				end,
 			}),
-			-- unwireButton = show_unwire and e("TextButton", {
+			-- unwireButton = show_unwire and React.createElement("TextButton", {
 			-- 	Text = unwireLabel,
 			-- 	AutomaticSize = Enum.AutomaticSize.XY,
 			-- 	Size = UDim2.new(0, 0, 0, 0),
@@ -275,14 +269,14 @@ function InstanceWirerComponent:renderPropertyWires(i)
 end
 
 function InstanceWirerComponent:renderHeaderAndLink(layoutOrder)
-	return e("Frame", {
+	return React.createElement("Frame", {
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = layoutOrder,
 		BackgroundTransparency = 1,
 	}, {
 
-		uiListLayout = e("UIListLayout", {
+		uiListLayout = React.createElement("UIListLayout", {
 			--Padding = UDim.new(0, PluginEnum.PaddingHorizontal),
 			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			SortOrder = Enum.SortOrder.LayoutOrder,
@@ -290,7 +284,7 @@ function InstanceWirerComponent:renderHeaderAndLink(layoutOrder)
 			VerticalAlignment = Enum.VerticalAlignment.Center,
 			HorizontalFlex = Enum.UIFlexAlignment.Fill,
 		}),
-		header = e("TextLabel", {
+		header = React.createElement("TextLabel", {
 			Size = UDim2.new(0.5, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			Text = self.props.header,
@@ -303,7 +297,7 @@ function InstanceWirerComponent:renderHeaderAndLink(layoutOrder)
 			TextXAlignment = Enum.TextXAlignment.Left,
 			LayoutOrder = 1,
 		}),
-		select = self.props.showSelectButton and e("TextButton", {
+		select = self.props.showSelectButton and React.createElement("TextButton", {
 			Text = "<u>Select</u>",
 			Size = UDim2.new(0, 40, 0, 20),
 			RichText = true,

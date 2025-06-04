@@ -1,12 +1,11 @@
 --!strict
-local Packages = script:FindFirstAncestor("Freeway").Packages
 
-local React = require(Packages.React)
+local Freeway = script:FindFirstAncestor("Freeway")
 
-local e = React.createElement
+local React = require(Freeway.Packages.React)
+local PluginEnum = require(Freeway.Enum)
 
 local PieceComponent = React.Component:extend("PieceComponent")
-local PluginEnum = require(script.Parent.Enum)
 
 export type Piece = {
 	id: string,
@@ -169,7 +168,7 @@ function PieceComponent:render()
 				VerticalAlignment = Enum.VerticalAlignment.Center,
 			}),
 
-			imagePreview = content ~= nil and e("ImageLabel", {
+			imagePreview = content ~= nil and React.createElement("ImageLabel", {
 				AutomaticSize = Enum.AutomaticSize.XY,
 				BackgroundColor3 = PluginEnum.ColorBackground,
 				BorderSizePixel = 0,
@@ -178,7 +177,7 @@ function PieceComponent:render()
 				Size = UDim2.fromOffset(PluginEnum.PreviewSize, PluginEnum.PreviewSize),
 			}),
 
-			imageStaticPreview = image ~= nil and e("ImageLabel", {
+			imageStaticPreview = image ~= nil and React.createElement("ImageLabel", {
 				AutomaticSize = Enum.AutomaticSize.XY,
 				BackgroundColor3 = PluginEnum.ColorBackground,
 				BorderSizePixel = 0,
@@ -222,7 +221,7 @@ function PieceComponent:render()
 				TextTransparency = wiredLabelTransparency,
 			}),
 
-			uiPadding = e("UIPadding", {
+			uiPadding = React.createElement("UIPadding", {
 				PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
 				PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
 				PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),

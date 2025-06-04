@@ -1,15 +1,15 @@
-local HttpService = game:GetService("HttpService")
+local Freeway = script:FindFirstAncestor("Freeway")
+
 local AssetService = game:GetService("AssetService")
-local Packages = script:FindFirstAncestor("Freeway").Packages
 local CollectionService = game:GetService("CollectionService")
+local HttpService = game:GetService("HttpService")
 local StudioService = game:GetService("StudioService")
 
-local t_u = require(script.Parent.tags_util)
-local base64 = require(Packages.base64)
-local WireableProperties = require(script.Parent.WireableProperties)
+local WireableProperties = require(Freeway.WireableProperties)
+local base64 = require(Freeway.Packages.base64)
+local tags_util = require(Freeway.tags_util)
 
-local POLL_RATE = 3 -- seconds
-
+local POLL_RATE_SECONDS = 3
 local BASE_URL = "http://localhost:3000"
 
 local object_fetcher = {
@@ -51,7 +51,7 @@ export type Piece = {
 
 type PiecesSyncState = {
 	updatedAt: number,
-	pieces: { [string]: Piece },
+	pieces: { [string]: Piece }?,
 }
 
 type ObjectInfo = {
@@ -339,7 +339,7 @@ function object_fetcher:update_instances_if_needed(instances)
 end
 
 function object_fetcher:update_instance_if_needed(instance)
-	local wires = t_u:get_instance_wires(instance)
+	local wires = tags_util:get_instance_wires(instance)
 	update_wired_instances(instance, wires, false)
 end
 
@@ -496,7 +496,7 @@ local downloadThread = task.spawn(function()
 end)
 
 function object_fetcher:update_instances_wired_to_object(object: ObjectInfo)
-	local instance_wires = t_u:ts_get_all_wired_in_dm()
+	local instance_wires = tags_util:ts_get_all_wired_in_dm()
 
 	for instance, wires in instance_wires do
 		local wired_to_object = false
@@ -728,7 +728,7 @@ local fetchThread = task.spawn(function()
 
 			local function process_recents(recents_map: { [string]: Piece })
 				-- 1. fetch all wired instances
-				local instanceWires = t_u.ts_get_all_wired_in_dm()
+				local instanceWires = tags_util.ts_get_all_wired_in_dm()
 				-- 1.1 pre-fetch all wired assets
 				for _, wires in instanceWires do
 					for object_id, _ in wires do
@@ -776,7 +776,7 @@ local fetchThread = task.spawn(function()
 
 			local function process_pieces()
 				-- 1. fetch all wired instances
-				local instanceWires = t_u.ts_get_all_wired_in_dm()
+				local instanceWires = tags_util.ts_get_all_wired_in_dm()
 				local object_is_wired = {}
 				for _, wires in instanceWires do
 					for object_id, _ in wires do
@@ -817,7 +817,7 @@ local fetchThread = task.spawn(function()
 			end
 			--print('tick, is running ', RunService:IsRunning(), RunService:IsRunMode()) -- TODO MI Why it doesn't detect it's running?
 		end
-		task.wait(POLL_RATE)
+		task.wait(POLL_RATE_SECONDS)
 	end
 end)
 
@@ -1078,7 +1078,7 @@ function object_fetcher:create_new_mesh_part(parent: Instance, node: meshNode, p
 	part.Size = Vector3.new(2, 2, 2)
 	part.CanCollide = true
 	part.Parent = parent
-	t_u:wire_instance(part, "" .. piece.id .. ":" .. node.id, "MeshId")
+	tags_util:wire_instance(part, "" .. piece.id .. ":" .. node.id, "MeshId")
 	local material = object_fetcher:get_material_channels_for_mesh(piece, node.id)
 	local surfaceAppearance = nil
 	print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
@@ -1097,7 +1097,7 @@ function object_fetcher:create_new_mesh_part(parent: Instance, node: meshNode, p
 				propertyName = "RoughnessMap"
 			end
 
-			t_u:wire_instance(
+			tags_util:wire_instance(
 				surfaceAppearance,
 				"" .. piece.id .. ":" .. material.id .. "-" .. channel.name,
 				propertyName
@@ -1155,7 +1155,7 @@ function object_fetcher:update_material_if_needed(parent: Instance, node: meshNo
 				propertyName = "RoughnessMap"
 			end
 			properties[propertyName] = true
-			t_u:wire_instance(
+			tags_util:wire_instance(
 				surfaceAppearance,
 				"" .. piece.id .. ":" .. material.id .. "-" .. channel.name,
 				propertyName
@@ -1191,7 +1191,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 		else
 			if piece == nil then
 				print("###Model is wired to a piece that does not exist: " .. piece_id .. ", " .. child_id)
-				t_u:unwire_instance(instance, propertyName)
+				tags_util:unwire_instance(instance, propertyName)
 				continue
 			end
 			-- for gltf sub-hierarchies, e.g. scenes or collections, first add/remove mesh parts, add/remove surface appearances
@@ -1207,10 +1207,10 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			local removed, inserted = 0, 0
 
 			for _, descendant in instance:GetDescendants() do
-				if not t_u:is_instance_wired(descendant) then
+				if not tags_util:is_instance_wired(descendant) then
 					continue
 				end
-				local wires = t_u:get_instance_wires(descendant)
+				local wires = tags_util:get_instance_wires(descendant)
 				if not descendant:IsA("MeshPart") then
 					continue
 				end
@@ -1363,7 +1363,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 	-- 4. persist current wiring config to tags
 	if needsTagsUpdate then
 		print("tags need an update!")
-		t_u:set_instance_wires(instance, wires)
+		tags_util:set_instance_wires(instance, wires)
 	end
 
 	return maxTimestamp

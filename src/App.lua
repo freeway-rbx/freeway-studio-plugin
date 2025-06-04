@@ -1,17 +1,13 @@
 local Freeway = script:FindFirstAncestor("Freeway")
-local Packages = Freeway.Packages
 
-local React = require(Packages.React)
-
-local e = React.createElement
+local React = require(Freeway.Packages.React)
+local StudioPluginContext = require(Freeway.Studio.StudioPluginContext)
+local StudioPluginGui = require(Freeway.Studio.StudioPluginGui)
+local StudioSharedToolbar = require(Freeway.Studio.StudioSharedToolbar)
+local VersionWarning = require(Freeway.VersionWarning)
+local Widget = require(Freeway.Widget)
 
 local App = React.Component:extend("App")
-
-local StudioSharedToolbar = require(script.Parent.Studio.StudioSharedToolbar)
-local StudioPluginContext = require(script.Parent.Studio.StudioPluginContext)
-local StudioPluginGui = require(script.Parent.Studio.StudioPluginGui)
-local Widget = require(script.Parent.Widget)
-local VersionWarning = require(script.Parent.VersionWarning)
 
 function App:init()
 	self:setState({
@@ -23,10 +19,10 @@ end
 function App:render()
 	local pluginName = "Freeway"
 
-	return e(StudioPluginContext.Provider, {
+	return React.createElement(StudioPluginContext.Provider, {
 		value = self.props.plugin,
 	}, {
-		gui = e(StudioPluginGui, {
+		gui = React.createElement(StudioPluginGui, {
 			id = pluginName,
 			title = pluginName,
 			active = self.state.guiEnabled,
@@ -52,9 +48,9 @@ function App:render()
 				})
 			end,
 		}, {
-			widget = e(Widget, { fetcher = self.props.fetcher }),
+			widget = React.createElement(Widget, { fetcher = self.props.fetcher }),
 		}),
-		sharedToolbarButton = e(StudioSharedToolbar, {
+		sharedToolbarButton = React.createElement(StudioSharedToolbar, {
 			combinerName = "Freeway-Toolbar",
 			toolbarName = "Freeway",
 			buttonName = "Freeway",

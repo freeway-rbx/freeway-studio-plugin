@@ -1,22 +1,18 @@
 local Freeway = script:FindFirstAncestor("Freeway")
-local Packages = Freeway.Packages
 
 local Selection = game:GetService("Selection")
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
-local React = require(Packages.React)
-local Cryo = require(Packages.Cryo)
-
-local e = React.createElement
+local Cryo = require(Freeway.Packages.Cryo)
+local PieceComponent = require(Freeway.PieceComponent)
+local PieceDetailsComponent = require(Freeway.PieceDetailsComponent)
+local PluginEnum = require(Freeway.Enum)
+local React = require(Freeway.Packages.React)
+local SceneComponent = require(Freeway.SceneComponent)
+local tags_util = require(Freeway.tags_util)
+local ui_commons = require(Freeway.ui_commons)
 
 local Widget = React.Component:extend("Widget")
-
-local PieceComponent = require(script.Parent.PieceComponent)
-local SceneComponent = require(script.Parent.SceneComponent)
-local PieceDetailsComponent = require(script.Parent.PieceDetailsComponent)
-local PluginEnum = require(script.Parent.Enum)
-local ui_commons = require(script.Parent.ui_commons)
-local t_u = require(script.Parent.tags_util)
-local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
 local DEBUG_USE_EDITABLE_IMAGES = true
 -- local ok, areEditableImagesEnabled = pcall(function()
@@ -107,19 +103,19 @@ function Widget:render()
 	-- end
 	--	if true then return self:renderPlayground() end
 
-	local element = e("Frame", {
+	local element = React.createElement("Frame", {
 		Size = UDim2.new(1, 0, 1, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = 0,
 		BackgroundTransparency = 1,
 	}, {
-		uiListLayout = e("UIListLayout", {
+		uiListLayout = React.createElement("UIListLayout", {
 			Padding = UDim.new(0, 4),
 			HorizontalAlignment = Enum.HorizontalAlignment.Left,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			HorizontalFlex = Enum.UIFlexAlignment.Fill,
 		}),
-		fetchButton = not updateUIStateAutomatically and e("TextButton", {
+		fetchButton = not updateUIStateAutomatically and React.createElement("TextButton", {
 			Text = "Refresh UI",
 			AutomaticSize = Enum.AutomaticSize.XY,
 			Size = UDim2.new(0, 0, 0, 0),
@@ -147,7 +143,7 @@ function Widget:render()
 
 		statusPanel = self:renderStatusPanel(),
 
-		back = self.state.mode == MODE_PIECE_DETAILS and e("TextButton", {
+		back = self.state.mode == MODE_PIECE_DETAILS and React.createElement("TextButton", {
 			Text = "< Back",
 			AutomaticSize = Enum.AutomaticSize.XY,
 			Size = UDim2.new(0, 0, 0, 0),
@@ -166,7 +162,7 @@ function Widget:render()
 			end,
 		}),
 		-- scrolling content frame
-		e("ScrollingFrame", {
+		React.createElement("ScrollingFrame", {
 			Size = UDim2.new(1, 0, 1, 0),
 			BackgroundTransparency = 1,
 			CanvasSize = UDim2.new(1, 0, 1, 0),
@@ -174,13 +170,13 @@ function Widget:render()
 			LayoutOrder = 3,
 			ScrollingDirection = Enum.ScrollingDirection.Y,
 		}, {
-			uiListLayout = e("UIListLayout", {
+			uiListLayout = React.createElement("UIListLayout", {
 				Padding = UDim.new(0, 4),
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				HorizontalFlex = Enum.UIFlexAlignment.Fill,
 			}),
-			-- uiPadding = e("UIPadding", {
+			-- uiPadding = React.createElement("UIPadding", {
 			-- 	PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
 			-- 	PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
 			-- 	PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
@@ -197,31 +193,31 @@ end
 function Widget:renderStatusPanel()
 	local theme = settings().Studio.Theme
 
-	return e("Frame", {
+	return React.createElement("Frame", {
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = 1,
 		BackgroundTransparency = 1,
 	}, {
-		uiListLayout = e("UIListLayout", {
+		uiListLayout = React.createElement("UIListLayout", {
 			Padding = UDim.new(2, 2),
 			HorizontalAlignment = Enum.HorizontalAlignment.Left,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			FillDirection = Enum.FillDirection.Horizontal,
 		}),
-		uiPadding = e("UIPadding", {
+		uiPadding = React.createElement("UIPadding", {
 			PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
 			PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
 			PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
 			PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
 		}),
-		-- savingLoadingDots = e(StudioComponents.LoadingDots, {
+		-- savingLoadingDots = React.createElement(StudioComponents.LoadingDots, {
 		-- 	LayoutOrder = 1,
 		-- 	AutomaticSize = Enum.AutomaticSize.None,
 		-- 	Size = UDim2.new(0, 5, 0, 5),
 		-- }),
 
-		offlineIndicatorLabel = self.state.offline and e("TextLabel", {
+		offlineIndicatorLabel = self.state.offline and React.createElement("TextLabel", {
 			Size = UDim2.new(0, 20, 0, 20),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			Text = "Please launch Freeway desktop app",
@@ -235,7 +231,7 @@ function Widget:renderStatusPanel()
 			LayoutOrder = 2,
 		}),
 
-		saveIndicatorLabel = #self.props.fetcher.asset_save_queue ~= 0 and e("TextLabel", {
+		saveIndicatorLabel = #self.props.fetcher.asset_save_queue ~= 0 and React.createElement("TextLabel", {
 			Size = UDim2.new(0, 20, 0, 20),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			Text = "Saving " .. #self.props.fetcher.asset_save_queue .. " asset(s)",
@@ -249,7 +245,7 @@ function Widget:renderStatusPanel()
 			TextXAlignment = Enum.TextXAlignment.Left,
 			LayoutOrder = 2,
 		}),
-		-- savingIndicatorLabel = #self.props.fetcher.add_to_asset_save_queue~=0 and e("TextLabel", {
+		-- savingIndicatorLabel = #self.props.fetcher.add_to_asset_save_queue~=0 and React.createElement("TextLabel", {
 		-- 	Text = 'Saving ' .. #self.state.pendingSaving .. ' dynamic piece(s) to Roblox',
 		-- 	AutomaticSize = Enum.AutomaticSize.XY,
 		-- 	Size = UDim2.new(0, 70, 0, 0),
@@ -262,7 +258,7 @@ function Widget:renderStatusPanel()
 		-- 	LayoutOrder = 2
 		-- }),
 
-		savePending = #self.state.pendingSaving ~= 0 and e("TextButton", {
+		savePending = #self.state.pendingSaving ~= 0 and React.createElement("TextButton", {
 			Text = "Save " .. #self.state.pendingSaving .. " dynamic piece(s) to Roblox",
 			AutomaticSize = Enum.AutomaticSize.XY,
 			Size = UDim2.new(0, 70, 0, 0),
@@ -280,7 +276,7 @@ function Widget:renderStatusPanel()
 				print("started saving")
 			end,
 		}),
-		-- dumpPending = #self.state.pendingSaving~=0 and e("TextButton", {
+		-- dumpPending = #self.state.pendingSaving~=0 and React.createElement("TextButton", {
 		-- 	Text = 'Print ' .. #self.state.pendingSaving,
 		-- 	AutomaticSize = Enum.AutomaticSize.XY,
 		-- 	Size = UDim2.new(0, 20, 0, 0),
@@ -304,24 +300,24 @@ function Widget:renderStatusPanel()
 end
 
 function Widget:renderPieceDetails()
-	return e("Frame", {
+	return React.createElement("Frame", {
 		Size = UDim2.new(0, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		LayoutOrder = 3,
 		BackgroundTransparency = 1,
 	}, {
-		uiListLayout = e("UIListLayout", {
+		uiListLayout = React.createElement("UIListLayout", {
 			Padding = UDim.new(2, 2),
 			HorizontalAlignment = Enum.HorizontalAlignment.Left,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
-		uiPadding = e("UIPadding", {
+		uiPadding = React.createElement("UIPadding", {
 			PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
 			PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
 			PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
 			PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
 		}),
-		pieceDetails = e(PieceDetailsComponent, {
+		pieceDetails = React.createElement(PieceDetailsComponent, {
 			piece = self.state.currentPiece,
 			fetcher = self.props.fetcher,
 		}),
@@ -345,7 +341,7 @@ function Widget:renderWirers()
 					local newPieceId = self.props.fetcher:createPiece(propertyName .. ".png")
 					print("newPieceId", newPieceId)
 					for _, instance in instances do
-						t_u:wire_instance(instance, newPieceId, propertyName)
+						tags_util:wire_instance(instance, newPieceId, propertyName)
 						self.props.fetcher:update_instance_if_needed(instance)
 					end
 					ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
@@ -367,7 +363,7 @@ function Widget:renderList()
 	if #self.state.selection == 0 and #self.state.pieces == 0 then
 		local theme = settings().Studio.Theme
 
-		local element = e("TextLabel", {
+		local element = React.createElement("TextLabel", {
 			Size = UDim2.new(0, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.XY,
 			LayoutOrder = 4,
@@ -385,11 +381,11 @@ function Widget:renderList()
 	end
 
 	local pieceComponents = {}
-	local k = t_u:table_size(instanceWirers) + 1
+	local k = tags_util:table_size(instanceWirers) + 1
 	for _, piece in self.state.pieces do
 		local newPieceComponent = nil
 		if piece.type == "mesh" then
-			newPieceComponent = e(SceneComponent, {
+			newPieceComponent = React.createElement(SceneComponent, {
 				piece = piece,
 				index = 1,
 				fetcher = self.props.fetcher,
@@ -402,7 +398,7 @@ function Widget:renderList()
 				LayoutOrder = k,
 			})
 		else
-			newPieceComponent = e(PieceComponent, {
+			newPieceComponent = React.createElement(PieceComponent, {
 				piece = piece,
 				index = k,
 				fetcher = self.props.fetcher,
@@ -419,7 +415,7 @@ function Widget:renderList()
 		k = k + 1
 	end
 
-	return e(
+	return React.createElement(
 		"Frame",
 		{
 			Size = UDim2.new(0, 0, 0, 0),
@@ -428,7 +424,7 @@ function Widget:renderList()
 			LayoutOrder = 3,
 		},
 		Cryo.Dictionary.join({
-			uiListLayout = e("UIListLayout", {
+			uiListLayout = React.createElement("UIListLayout", {
 				Padding = UDim.new(0, 4),
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -441,14 +437,14 @@ function Widget:renderPlayground()
 	local i = 1
 	local elements = {}
 	for k, element in self.state.elements do
-		local sourceText = e("Frame", {
+		local sourceText = React.createElement("Frame", {
 			Size = UDim2.new(0, 0, 0, 0),
 			BackgroundTransparency = 1,
 			AutomaticSize = Enum.AutomaticSize.XY,
 			LayoutOrder = i,
 		}, {
 			Cryo.Dictionary.join({
-				uiListLayout = e("UIListLayout", {
+				uiListLayout = React.createElement("UIListLayout", {
 					Padding = UDim.new(0, PluginEnum.PaddingHorizontal),
 					HorizontalAlignment = Enum.HorizontalAlignment.Left,
 					SortOrder = Enum.SortOrder.LayoutOrder,
@@ -456,14 +452,14 @@ function Widget:renderPlayground()
 					VerticalAlignment = Enum.VerticalAlignment.Center,
 				}),
 			}, {
-				uiPadding = e("UIPadding", {
+				uiPadding = React.createElement("UIPadding", {
 					PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
 					PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
 					PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
 					PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
 				}),
 
-				imagePreview = e("ImageLabel", {
+				imagePreview = React.createElement("ImageLabel", {
 
 					Size = UDim2.new(0, PluginEnum.PreviewSize, 0, PluginEnum.PreviewSize),
 					AutomaticSize = Enum.AutomaticSize.XY,
@@ -472,7 +468,7 @@ function Widget:renderPlayground()
 					Image = "http://www.roblox.com/asset/?id=699259085",
 					LayoutOrder = 1,
 				}),
-				name = e("TextLabel", {
+				name = React.createElement("TextLabel", {
 					Size = UDim2.new(0, 0, 0, 0),
 					AutomaticSize = Enum.AutomaticSize.XY,
 					Text = element,
@@ -484,7 +480,7 @@ function Widget:renderPlayground()
 					TextXAlignment = Enum.TextXAlignment.Left,
 					LayoutOrder = 2,
 				}),
-				openButton = e("TextButton", {
+				openButton = React.createElement("TextButton", {
 					Text = "Open",
 					AutomaticSize = Enum.AutomaticSize.XY,
 					Size = UDim2.new(0, 0, 0, 0),
@@ -503,7 +499,7 @@ function Widget:renderPlayground()
 		i = i + 1
 	end
 
-	local element = e("ScrollingFrame", {
+	local element = React.createElement("ScrollingFrame", {
 		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
@@ -511,7 +507,7 @@ function Widget:renderPlayground()
 		ScrollingDirection = Enum.ScrollingDirection.XY,
 	}, {
 		Cryo.Dictionary.join({
-			uiListLayout = e("UIListLayout", {
+			uiListLayout = React.createElement("UIListLayout", {
 				Padding = UDim.new(0, 10),
 				HorizontalAlignment = Enum.HorizontalAlignment.Left,
 				SortOrder = Enum.SortOrder.LayoutOrder,
@@ -529,7 +525,7 @@ function Widget:renderPlayground2()
 		meta = self.props.fetcher.cache["meta_" .. piece.id]
 	end
 
-	local newSceneComponent = e(SceneComponent, {
+	local newSceneComponent = React.createElement(SceneComponent, {
 		piece = piece,
 		meta = meta,
 		index = 1,
