@@ -313,16 +313,12 @@ function ObjectFetcherService:add_object_to_queue(object: ObjectInfo, queue: tab
 	local exists = false
 	for _, queued_object in queue do
 		if is_object_info_equal(object, queued_object) then
-			--print('add_object_to_queue: already in the queue: ', queue_name,  object.id, ':', object.childId,  object.hash)
 			exists = true
 			break
 		end
 	end
 	if not exists then
-		print("add_object_to_queue: adding to ", queue_name, object.id, ":", object.childId, object.hash)
 		table.insert(queue, object)
-	else
-		print("add_object_to_queue: already in the queue: ", queue_name, object.id, ":", object.childId, object.hash)
 	end
 end
 
@@ -345,12 +341,11 @@ function ObjectFetcherService:update_instances_if_needed(instances)
 end
 
 function ObjectFetcherService:update_instance_if_needed(instance: Instance)
-	print("hi", type(instance))
 	local wires = TagUtils.getInstanceWires(instance)
 	update_wired_instances(instance, wires, false)
 end
 
-local function updateAssetIdForPieceNetwork(objectInfo, assetId)
+function updateAssetIdForPieceNetwork(objectInfo, assetId)
 	local suffix = ""
 	if objectInfo.type == "image" then
 		if objectInfo.childId ~= nil then -- update gltf material channel,
@@ -383,7 +378,6 @@ local function updateAssetIdForPieceNetwork(objectInfo, assetId)
 	end
 
 	local url = BASE_URL .. "/api/pieces/" .. objectInfo.id .. suffix
-	print("ObjectFetcherService:updateAssetIdForPieceNetwork: URL: " .. url)
 	local data = { hash = objectInfo.hash, assetId = "" .. assetId }
 	local jsonData = HttpService:JSONEncode(data)
 	local res = HttpService:PostAsync(url, jsonData)
@@ -392,9 +386,9 @@ local function updateAssetIdForPieceNetwork(objectInfo, assetId)
 	return json
 end
 
-function ObjectFetcherService:updateAssetIdForPiece(pieceId, childId, hash, assetId)
+function ObjectFetcherService:updateAssetIdForPiece(pieceId, childId)
 	local status, errOrResult = pcall(function()
-		updateAssetIdForPieceNetwork(pieceId, childId, hash, assetId)
+		updateAssetIdForPieceNetwork(pieceId, childId)
 	end)
 
 	if not status then
@@ -408,7 +402,6 @@ end
 local function fetchFromNetwork(object: ObjectInfo)
 	local suffix = ""
 
-	print("fetchFromNetwork: object:", object.id, object.childId, object.hash)
 	if object.type == "image" then
 		if object.childId == nil then
 			suffix = "/raw" -- image on the file system
@@ -416,25 +409,24 @@ local function fetchFromNetwork(object: ObjectInfo)
 			-- '/:id/material/:materialId/channel/:channel/raw
 			local split = string.split(object.childId, "-")
 			if #split < 2 then
-				print("fetchFromNetwork: invalid childId for material channel:", object.id, object.childId)
+				warn("[FREEWAY] - fetchFromNetwork: invalid childId for material channel:", object.id, object.childId)
 				return
 			end
 			suffix = "/material/" .. split[1] .. "/channel/" .. split[2] .. "/raw"
 		end
 	elseif object.type == "mesh" then
 		if object.childId == nil then
-			print("fetchFromNetwork: empty childId for mesh, ", object.id, object.childId)
+			warn("[FREEWAY] - fetchFromNetwork: empty childId for mesh, ", object.id, object.childId)
 		else
 			-- '/:id/mesh/:meshId/raw'
 			suffix = "/mesh/" .. object.childId .. "/raw"
 		end
 	else
-		print("fetchFromNetwork: unknown type:", object.type, object)
+		warn("[FREEWAY] - fetchFromNetwork: unknown type:", object.type, object)
 		return
 	end
 
 	local url = BASE_URL .. "/api/pieces/" .. object.id .. suffix
-	print("mesh: fetchFromNetwork URL: " .. url)
 
 	local res = HttpService:GetAsync(url)
 	local json = HttpService:JSONDecode(res)
@@ -480,20 +472,12 @@ local downloadThread = task.spawn(function()
 			local object = ObjectFetcherService.download_queue[1]
 			local cached = ObjectFetcherService.cache[cache_key_for_object(object)]
 			local exists = ObjectFetcherService:object_exists(object)
+
 			if exists and (cached == nil or cached.hash ~= object.hash) then
-				print("download thread: fetching an object from the network: ", object.id, object.childId, object.hash)
 				local status, err = pcall(fetchFromNetwork, object)
 				if not status then
-					print("Can't fetch object ", object, " from the filesystem. fetchFromNetwork:", err)
+					warn("[FREEWAY] - Can't fetch object ", object, " from the filesystem. fetchFromNetwork:", err)
 				end
-			else
-				print(
-					"download thread: skipping download, have cached version: ",
-					cached,
-					object.id,
-					object.childId,
-					object.hash
-				)
 			end
 
 			table.remove(ObjectFetcherService.download_queue, 1)
@@ -525,15 +509,12 @@ function ObjectFetcherService:update_instances_wired_to_object(object: ObjectInf
 		end
 
 		if wired_to_object then
-			--print('ObjectFetcherService:update_instances_wired_to_object: updating instance', instance, 'for object', object.id, object.childId)
 			update_wired_instances(instance, wires, false)
 		end
 	end
 end
 
 function saveAsset(object, objectInfo: ObjectInfo)
-	local AssetService = game:GetService("AssetService")
-
 	local editableObject = object.object
 	-- add vertices, faces, and uvs to the mesh
 	local assetType = Enum.AssetType.Mesh
@@ -809,12 +790,6 @@ local fetchThread = task.spawn(function()
 			if
 				ObjectFetcherService.updatedAt ~= mostRecentTimestampForPieces(ObjectFetcherService.updatedAt, recents)
 			then
-				print(
-					"updating timestamp: from: ",
-					ObjectFetcherService.updatedAt,
-					"to:",
-					mostRecentTimestampForPieces(ObjectFetcherService.updatedAt, recents)
-				)
 				ObjectFetcherService.updatedAt = mostRecentTimestampForPieces(ObjectFetcherService.updatedAt, recents)
 			end
 		end

@@ -83,7 +83,7 @@ function UIUtils.buildWirersModel(instances, pieceType, pieceId)
 
 		wirerModel.combinedPropertyState = {}
 		for property, wire_state in properties_wire_state do
-			local count = TagUtils.table_size(wire_state)
+			local count = TagUtils.tableSize(wire_state)
 			-- print('property->wireState', property, wire_state, count)
 
 			if count == 0 then

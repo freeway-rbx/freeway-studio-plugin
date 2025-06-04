@@ -53,10 +53,9 @@ end
 
 function TagUtils.unwireInstance(instance: Instance, property: string)
 	local wires = TagUtils.getInstanceWires(instance)
-	print("setInstanceWires before!", wires)
 	local resulting_wires = {}
-	for piece_id, property in wires do
-		if property == property then
+	for piece_id, piece_property in wires do
+		if piece_property == property then
 			continue
 		end
 		resulting_wires[piece_id] = property
@@ -65,9 +64,6 @@ function TagUtils.unwireInstance(instance: Instance, property: string)
 end
 
 function TagUtils.setInstanceWires(instance: Instance, wires: {})
-	-- cleanup tags
-
-	print("setInstanceWires!", wires)
 	instance:RemoveTag(TAG_WIRED)
 
 	for _, tag in instance:GetTags() do
@@ -90,7 +86,6 @@ function TagUtils.setInstanceWires(instance: Instance, wires: {})
 
 	local tagsJson = TAG_PREFIX .. HttpService:JSONEncode(wires)
 	instance:AddTag(tagsJson)
-
 	instance:AddTag(TAG_WIRED)
 end
 
@@ -106,7 +101,7 @@ function TagUtils.isInstanceWired(instance: Instance): boolean
 	return instance:HasTag(TAG_WIRED)
 end
 
-function TagUtils.table_size(tab)
+function TagUtils.tableSize(tab: { [any]: any }): number
 	local count = 0
 	for _, _ in tab do
 		count = count + 1

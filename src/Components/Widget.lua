@@ -381,7 +381,7 @@ function Widget:renderList()
 	end
 
 	local pieceComponents = {}
-	local k = TagUtils.table_size(instanceWirers) + 1
+	local k = TagUtils.tableSize(instanceWirers) + 1
 	for _, piece in self.state.pieces do
 		local newPieceComponent = nil
 		if piece.type == "mesh" then
