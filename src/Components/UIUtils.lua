@@ -1,15 +1,15 @@
 local Freeway = script:FindFirstAncestor("Freeway")
 
 local Cryo = require(Freeway.Packages.Cryo)
-local InstanceWirerComponent = require(Freeway.InstanceWirerComponent)
+local InstanceWirerComponent = require(Freeway.Components.InstanceWirerComponent)
 local PluginEnum = require(Freeway.Enum)
 local React = require(Freeway.Packages.React)
 local WireableProperties = require(Freeway.WireableProperties)
-local tags_util = require(Freeway.tags_util)
+local TagUtils = require(Freeway.TagUtils)
 
-local ui_commons = {}
+local UIUtils = {}
 
-function ui_commons:buildWireableModelsForListMode(instances)
+function UIUtils.buildWireableModelsForListMode(instances: { Instance })
 	local wireables = {}
 	for _, instance in instances do
 		if
@@ -19,12 +19,14 @@ function ui_commons:buildWireableModelsForListMode(instances)
 			table.insert(wireables, instance)
 		end
 	end
-	local wirersModelMeshes = self:buildWirersModel(wireables, "mesh")
-	local wirersModelImages = self:buildWirersModel(wireables, "image")
+
+	local wirersModelMeshes = UIUtils.buildWirersModel(wireables, "mesh")
+	local wirersModelImages = UIUtils.buildWirersModel(wireables, "image")
+
 	return { wirersModelMeshes, wirersModelImages }
 end
 
-function ui_commons:buildWirersModel(instances, pieceType, pieceId)
+function UIUtils.buildWirersModel(instances, pieceType, pieceId)
 	local result = {}
 	for _, instance in instances do
 		local wirerModelByType = result[instance.ClassName]
@@ -62,7 +64,7 @@ function ui_commons:buildWirersModel(instances, pieceType, pieceId)
 		-- per-property wiring state -- wired to current, not wired, etc
 		local properties_wire_state = {}
 		for j, instance in wirerModel.instances do
-			local instanceWires = tags_util:get_instance_wires(instance)
+			local instanceWires = TagUtils.getInstanceWires(instance)
 			for piece_id, property in instanceWires do
 				local prop_wire_st = properties_wire_state[property]
 				if prop_wire_st == nil then
@@ -81,7 +83,7 @@ function ui_commons:buildWirersModel(instances, pieceType, pieceId)
 
 		wirerModel.combinedPropertyState = {}
 		for property, wire_state in properties_wire_state do
-			local count = tags_util:table_size(wire_state)
+			local count = TagUtils.table_size(wire_state)
 			-- print('property->wireState', property, wire_state, count)
 
 			if count == 0 then
@@ -115,7 +117,7 @@ function ui_commons:buildWirersModel(instances, pieceType, pieceId)
 	return result
 end
 
-function ui_commons:buildInstanceWirerComponent(i, wirerModel, showSelectButton, piece, fetcher, onWire, onUnwire)
+function UIUtils.buildInstanceWirerComponent(i, wirerModel, showSelectButton, piece, fetcher, onWire, onUnwire)
 	local e = React.createElement(InstanceWirerComponent, {
 		index = i,
 		instances = wirerModel.instances,
@@ -131,7 +133,7 @@ function ui_commons:buildInstanceWirerComponent(i, wirerModel, showSelectButton,
 			onWire(instances, propertyName)
 			-- for _, instance in instances do
 			-- 	-- print('wire instance', instance, self.props.piece.id, propertyName)
-			-- 	tags_util:wire_instance(instance, self.props.piece.id, propertyName)
+			-- 	TagUtils.wireInstance(instance, self.props.piece.id, propertyName)
 			-- 	self.props.fetcher:update_instance_if_needed(instance)
 			-- end
 			-- ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
@@ -141,7 +143,7 @@ function ui_commons:buildInstanceWirerComponent(i, wirerModel, showSelectButton,
 			onUnwire(instances, propertyName)
 			-- for _, instance in instances do
 			-- 	-- print('unwire all')
-			-- 	tags_util:unwire_instance(instance, propertyName)
+			-- 	TagUtils.unwireInstance(instance, propertyName)
 			-- end
 			-- ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
 		end,
@@ -150,4 +152,4 @@ function ui_commons:buildInstanceWirerComponent(i, wirerModel, showSelectButton,
 	return e
 end
 
-return ui_commons
+return UIUtils

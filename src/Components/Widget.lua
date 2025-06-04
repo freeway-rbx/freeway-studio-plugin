@@ -4,13 +4,13 @@ local Selection = game:GetService("Selection")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
 local Cryo = require(Freeway.Packages.Cryo)
-local PieceComponent = require(Freeway.PieceComponent)
-local PieceDetailsComponent = require(Freeway.PieceDetailsComponent)
+local PieceComponent = require(Freeway.Components.PieceComponent)
+local PieceDetailsComponent = require(Freeway.Components.PieceDetailsComponent)
 local PluginEnum = require(Freeway.Enum)
 local React = require(Freeway.Packages.React)
-local SceneComponent = require(Freeway.SceneComponent)
-local tags_util = require(Freeway.tags_util)
-local ui_commons = require(Freeway.ui_commons)
+local SceneComponent = require(Freeway.Components.SceneComponent)
+local TagUtils = require(Freeway.TagUtils)
+local UIUtils = require(Freeway.Components.UIUtils)
 
 local Widget = React.Component:extend("Widget")
 
@@ -41,7 +41,7 @@ end
 
 function Widget:updateSelectedWirersState()
 	local selection = Selection:Get()
-	local result = ui_commons:buildWireableModelsForListMode(selection)
+	local result = UIUtils.buildWireableModelsForListMode(selection)
 	self:setState({ selectedWirersModel = result })
 end
 
@@ -75,14 +75,13 @@ function Widget:init()
 	self:updateSelectedWirersState()
 	self.updateThread = task.spawn(function()
 		while updateUIStateAutomatically do
-			-- fetching data, should be externalized and listen to events from object_fetcher
+			-- fetching data, should be externalized and listen to events from ObjectFetcherService
 			local pieces = self.props.fetcher.pieces
 			local pendingSaving = self.props.fetcher.pending_save
 
 			local currentPiece = nil
 			if self.state.currentPiece ~= nil then
 				currentPiece = self.props.fetcher.pieces_map[self.state.currentPiece.id]
-			else
 			end
 
 			self:setState({
@@ -131,7 +130,6 @@ function Widget:render()
 				local currentPiece = nil
 				if self.state.currentPiece ~= nil then
 					currentPiece = self.props.fetcher.pieces_map[self.state.currentPiece.id]
-				else
 				end
 
 				self:setState({
@@ -143,26 +141,28 @@ function Widget:render()
 
 		statusPanel = self:renderStatusPanel(),
 
-		back = self.state.mode == MODE_PIECE_DETAILS and React.createElement("TextButton", {
-			Text = "< Back",
-			AutomaticSize = Enum.AutomaticSize.XY,
-			Size = UDim2.new(0, 0, 0, 0),
-			TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButtonText),
-			BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButton),
-			BorderSizePixel = 0,
-			Font = Enum.Font.BuilderSansBold,
-			TextSize = PluginEnum.FontSizeNavigationButton,
-			LayoutOrder = 2,
-			[React.Event.MouseButton1Click] = function()
-				local lMode = self.state.mode + 1
-				if lMode > MODE_PIECE_DETAILS then
-					lMode = MODE_LIST
-				end
-				self:setState({ mode = lMode })
-			end,
-		}),
+		back = if self.state.mode == MODE_PIECE_DETAILS
+			then React.createElement("TextButton", {
+				Text = "< Back",
+				AutomaticSize = Enum.AutomaticSize.XY,
+				Size = UDim2.new(0, 0, 0, 0),
+				TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButtonText),
+				BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogButton),
+				BorderSizePixel = 0,
+				Font = Enum.Font.BuilderSansBold,
+				TextSize = PluginEnum.FontSizeNavigationButton,
+				LayoutOrder = 2,
+				[React.Event.MouseButton1Click] = function()
+					local lMode = self.state.mode + 1
+					if lMode > MODE_PIECE_DETAILS then
+						lMode = MODE_LIST
+					end
+					self:setState({ mode = lMode })
+				end,
+			})
+			else nil,
 		-- scrolling content frame
-		React.createElement("ScrollingFrame", {
+		ScrollingFrame = React.createElement("ScrollingFrame", {
 			Size = UDim2.new(1, 0, 1, 0),
 			BackgroundTransparency = 1,
 			CanvasSize = UDim2.new(1, 0, 1, 0),
@@ -330,7 +330,7 @@ function Widget:renderWirers()
 	local i = -20
 	for _, model in models do
 		for _, m in model do
-			wirerComponents["wirer_" .. i] = ui_commons:buildInstanceWirerComponent(
+			wirerComponents["wirer_" .. i] = UIUtils.buildInstanceWirerComponent(
 				i,
 				m,
 				false,
@@ -341,7 +341,7 @@ function Widget:renderWirers()
 					local newPieceId = self.props.fetcher:createPiece(propertyName .. ".png")
 					print("newPieceId", newPieceId)
 					for _, instance in instances do
-						tags_util:wire_instance(instance, newPieceId, propertyName)
+						TagUtils.wireInstance(instance, newPieceId, propertyName)
 						self.props.fetcher:update_instance_if_needed(instance)
 					end
 					ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
@@ -381,7 +381,7 @@ function Widget:renderList()
 	end
 
 	local pieceComponents = {}
-	local k = tags_util:table_size(instanceWirers) + 1
+	local k = TagUtils.table_size(instanceWirers) + 1
 	for _, piece in self.state.pieces do
 		local newPieceComponent = nil
 		if piece.type == "mesh" then

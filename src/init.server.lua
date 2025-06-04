@@ -11,14 +11,14 @@ end
 
 local Freeway = script
 
-local App = require(Freeway.App)
+local App = require(Freeway.Components.App)
 local React = require(Freeway.Packages.React)
 local ReactRoblox = require(Freeway.Packages.ReactRoblox)
-local fetcher = require(Freeway.object_fetcher)
+local ObjectFetcherService = require(Freeway.ObjectFetcherService)
 
 local app = React.createElement(App, {
 	plugin = plugin,
-	fetcher = fetcher,
+	fetcher = ObjectFetcherService,
 })
 
 local tree = ReactRoblox.createRoot(Instance.new("Folder"))
@@ -26,5 +26,5 @@ tree:render(ReactRoblox.createPortal(app, game:GetService("CoreGui")))
 
 plugin.Unloading:Connect(function()
 	tree:unmount()
-	fetcher:stop()
+	ObjectFetcherService:stop()
 end)

@@ -7,9 +7,9 @@ local HttpService = game:GetService("HttpService")
 local TAG_WIRED = "wired"
 local TAG_PREFIX = "piece:"
 
-local tags_util = {}
+local TagUtils = {}
 
-function tags_util:get_instance_wires(instance: Instance)
+function TagUtils.getInstanceWires(instance: Instance)
 	if not instance:HasTag(TAG_WIRED) then
 		return {}
 	end
@@ -26,7 +26,7 @@ function tags_util:get_instance_wires(instance: Instance)
 	return {}
 end
 
-function tags_util:shouldRebuildWirersStat(selectedInstances, instance)
+function TagUtils.shouldRebuildWirersStat(selectedInstances, instance)
 	local updateWirersState = false
 	for _, selectedInstance in selectedInstances do
 		if selectedInstance == instance then
@@ -36,8 +36,9 @@ function tags_util:shouldRebuildWirersStat(selectedInstances, instance)
 	end
 	return updateWirersState
 end
-function tags_util:wire_instance(instance: Instance, object_id, property)
-	local wires = self:get_instance_wires(instance)
+
+function TagUtils.wireInstance(instance: Instance, object_id, property: string)
+	local wires = TagUtils.getInstanceWires(instance)
 
 	-- remove existing wire for property
 	for w_piece_id, w_property in wires do
@@ -47,12 +48,12 @@ function tags_util:wire_instance(instance: Instance, object_id, property)
 		end
 	end
 	wires[object_id] = property
-	self:set_instance_wires(instance, wires)
+	TagUtils.setInstanceWires(instance, wires)
 end
 
-function tags_util:unwire_instance(instance: Instance, property)
-	local wires = self:get_instance_wires(instance)
-	print("set_instance_wires before!", wires)
+function TagUtils.unwireInstance(instance: Instance, property: string)
+	local wires = TagUtils.getInstanceWires(instance)
+	print("setInstanceWires before!", wires)
 	local resulting_wires = {}
 	for piece_id, property in wires do
 		if property == property then
@@ -60,13 +61,13 @@ function tags_util:unwire_instance(instance: Instance, property)
 		end
 		resulting_wires[piece_id] = property
 	end
-	self:set_instance_wires(instance, resulting_wires)
+	TagUtils.setInstanceWires(instance, resulting_wires)
 end
 
-function tags_util:set_instance_wires(instance: Instance, wires: {})
+function TagUtils.setInstanceWires(instance: Instance, wires: {})
 	-- cleanup tags
 
-	print("set_instance_wires!", wires)
+	print("setInstanceWires!", wires)
 	instance:RemoveTag(TAG_WIRED)
 
 	for _, tag in instance:GetTags() do
@@ -93,19 +94,19 @@ function tags_util:set_instance_wires(instance: Instance, wires: {})
 	instance:AddTag(TAG_WIRED)
 end
 
-function tags_util:ts_get_all_wired_in_dm(): { [Instance]: { string: string } }
+function TagUtils.ts_get_all_wired_in_dm(): { [Instance]: { string: string } }
 	local instance_wires = {}
 	for _, inst in CollectionService:GetTagged(TAG_WIRED) do -- TODO MI: Filter invalid instance types
-		instance_wires[inst] = tags_util:get_instance_wires(inst)
+		instance_wires[inst] = TagUtils.getInstanceWires(inst)
 	end
 	return instance_wires
 end
 
-function tags_util:is_instance_wired(instance: Instance): boolean
+function TagUtils.isInstanceWired(instance: Instance): boolean
 	return instance:HasTag(TAG_WIRED)
 end
 
-function tags_util:table_size(tab)
+function TagUtils.table_size(tab)
 	local count = 0
 	for _, _ in tab do
 		count = count + 1
@@ -113,4 +114,4 @@ function tags_util:table_size(tab)
 	return count
 end
 
-return tags_util
+return TagUtils

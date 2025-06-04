@@ -6,12 +6,12 @@ local CollectionService = game:GetService("CollectionService")
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
 local Cryo = require(Freeway.Packages.Cryo)
-local InstanceWirerComponent = require(Freeway.InstanceWirerComponent)
+local InstanceWirerComponent = require(Freeway.Components.InstanceWirerComponent)
 local PluginEnum = require(Freeway.Enum)
 local React = require(Freeway.Packages.React)
 local StudioComponents = require(Freeway.Packages.studiocomponents)
-local tags_util = require(Freeway.tags_util)
-local ui_commons = require(Freeway.ui_commons)
+local TagUtils = require(Freeway.TagUtils)
+local UIUtils = require(Freeway.Components.UIUtils)
 
 local PieceDetailsComponent = React.Component:extend("PieceDetailsComponent")
 
@@ -31,7 +31,7 @@ function PieceDetailsComponent:init()
 	self:updateDMWirerState()
 
 	CollectionService:GetInstanceAddedSignal("wired"):Connect(function(instance)
-		local updateWirersState = tags_util:shouldRebuildWirersStat(Selection:Get(), instance)
+		local updateWirersState = TagUtils.shouldRebuildWirersStat(Selection:Get(), instance)
 		if updateWirersState then
 			self:updateSelectedWirersState()
 		end
@@ -39,7 +39,7 @@ function PieceDetailsComponent:init()
 	end)
 
 	CollectionService:GetInstanceRemovedSignal("wired"):Connect(function(instance)
-		local updateWirersState = tags_util:shouldRebuildWirersStat(Selection:Get(), instance)
+		local updateWirersState = TagUtils.shouldRebuildWirersStat(Selection:Get(), instance)
 		if updateWirersState then
 			self:updateSelectedWirersState()
 		end
@@ -49,11 +49,11 @@ function PieceDetailsComponent:init()
 end
 
 function PieceDetailsComponent:buildWirersModel(instances)
-	return ui_commons:buildWirersModel(instances, self.props.piece.type, self.props.piece.id)
+	return UIUtils.buildWirersModel(instances, self.props.piece.type, self.props.piece.id)
 end
 
 function PieceDetailsComponent:updateDMWirerState()
-	local instancesToWires = tags_util.ts_get_all_wired_in_dm()
+	local instancesToWires = TagUtils.ts_get_all_wired_in_dm()
 	local instancesWiredToCurrentPiece = {}
 	for instance, wires in instancesToWires do
 		if wires[self.props.piece.id] ~= nil then
@@ -89,7 +89,7 @@ function PieceDetailsComponent:buildInstanceWirerComponent(i, wirerModel, showSe
 			local recordingId = ChangeHistoryService:TryBeginRecording("wire")
 			for _, instance in instances do
 				-- print('wire instance', instance, self.props.piece.id, propertyName)
-				tags_util:wire_instance(instance, self.props.piece.id, propertyName)
+				TagUtils.wireInstance(instance, self.props.piece.id, propertyName)
 				self.props.fetcher:update_instance_if_needed(instance)
 			end
 			ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
@@ -99,7 +99,7 @@ function PieceDetailsComponent:buildInstanceWirerComponent(i, wirerModel, showSe
 
 			for _, instance in instances do
 				-- print('unwire all')
-				tags_util:unwire_instance(instance, propertyName)
+				TagUtils.unwireInstance(instance, propertyName)
 			end
 			ChangeHistoryService:FinishRecording(recordingId, Enum.FinishRecordingOperation.Commit)
 		end,
@@ -329,7 +329,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 						part.Size = Vector3.new(2, 2, 2)
 						part.CanCollide = true
 						part.Parent = workspace
-						tags_util:wire_instance(part, self.props.piece.id, "MeshId")
+						TagUtils.wireInstance(part, self.props.piece.id, "MeshId")
 					elseif self.props.piece.type == "image" then
 						part = Instance.new("Part")
 						part.Parent = workspace
@@ -338,7 +338,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 						part.CanCollide = true
 						local decal = Instance.new("Decal")
 						decal.Parent = part
-						tags_util:wire_instance(decal, self.props.piece.id, "Texture")
+						TagUtils.wireInstance(decal, self.props.piece.id, "Texture")
 					end
 
 					-- Position 10 studs in front of camera

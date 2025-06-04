@@ -5,7 +5,7 @@ local StudioPluginContext = require(Freeway.Studio.StudioPluginContext)
 local StudioPluginGui = require(Freeway.Studio.StudioPluginGui)
 local StudioSharedToolbar = require(Freeway.Studio.StudioSharedToolbar)
 local VersionWarning = require(Freeway.VersionWarning)
-local Widget = require(Freeway.Widget)
+local Widget = require(Freeway.Components.Widget)
 
 local App = React.Component:extend("App")
 

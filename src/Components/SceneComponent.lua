@@ -7,7 +7,7 @@ local Cryo = require(Freeway.Packages.Cryo)
 local PluginEnum = require(Freeway.Enum)
 local React = require(Freeway.Packages.React)
 local StudioComponents = require(Freeway.Packages.studiocomponents)
-local tags_util = require(Freeway.tags_util)
+local TagUtils = require(Freeway.TagUtils)
 
 local SceneComponent = React.Component:extend("SceneComponent")
 
@@ -152,7 +152,7 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 								meshPart.Position = partPosition
 							end
 
-							tags_util:wire_instance(part, self.props.piece.id .. ":" .. childPath, "Model")
+							TagUtils.wireInstance(part, self.props.piece.id .. ":" .. childPath, "Model")
 						end
 					elseif self.props.piece.type == "image" then
 						part = Instance.new("Part")
@@ -162,7 +162,7 @@ function SceneComponent:traverseModel(node, depth, list, parents)
 						part.CanCollide = true
 						local decal = Instance.new("Decal")
 						decal.Parent = part
-						tags_util:wire_instance(decal, self.props.piece.id, "Texture")
+						TagUtils.wireInstance(decal, self.props.piece.id, "Texture")
 						table.insert(partsToUpdate, part)
 						part.Position = partPosition
 					end
@@ -199,7 +199,7 @@ function SceneComponent:createMeshPart(node, parent, partsToUpdate)
 		part.Size = Vector3.new(2, 2, 2)
 		part.CanCollide = true
 		part.Parent = parent
-		tags_util:wire_instance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
+		TagUtils.wireInstance(part, "" .. self.props.piece.id .. ":" .. node.id, "MeshId")
 		local material = self.props.fetcher:get_material_channels_for_mesh(self.props.piece, node.id)
 		local surfaceAppearance = nil
 		if material ~= nil and material.channels ~= nil and #material.channels > 0 then
@@ -217,7 +217,7 @@ function SceneComponent:createMeshPart(node, parent, partsToUpdate)
 					propertyName = "RoughnessMap"
 				end
 
-				tags_util:wire_instance(
+				TagUtils.wireInstance(
 					surfaceAppearance,
 					"" .. self.props.piece.id .. ":" .. material.id .. "-" .. channel.name,
 					propertyName

@@ -7,12 +7,12 @@ local StudioService = game:GetService("StudioService")
 
 local WireableProperties = require(Freeway.WireableProperties)
 local base64 = require(Freeway.Packages.base64)
-local tags_util = require(Freeway.tags_util)
+local TagUtils = require(Freeway.TagUtils)
 
 local POLL_RATE_SECONDS = 3
 local BASE_URL = "http://localhost:3000"
 
-local object_fetcher = {
+local ObjectFetcherService = {
 	cache = {},
 	pieces = {},
 	pieces_map = {},
@@ -66,21 +66,27 @@ local pieces_sync_state: PiecesSyncState = {
 	updatedAt = -1, -- MI: Product opinion: update all wired instances on startup to the most recent pieces values
 }
 
-CollectionService:GetInstanceAddedSignal("wired"):Connect(function(instance)
-	print("object_fetcher:GetInstanceAddedSignal:AddedTag")
-	object_fetcher:update_instance_if_needed(instance)
-end)
+local connections: { RBXScriptConnection } = {}
+table.insert(
+	connections,
+	CollectionService:GetInstanceAddedSignal("wired"):Connect(function(instance)
+		ObjectFetcherService:update_instance_if_needed(instance)
+	end)
+)
 
-CollectionService:GetInstanceRemovedSignal("wired"):Connect(function(instance)
-	--object_fetcher:update_instance_if_needed(instance)
-	print("implement me!")
-end)
+table.insert(
+	connections,
+	CollectionService:GetInstanceRemovedSignal("wired"):Connect(function(instance)
+		--ObjectFetcherService:update_instance_if_needed(instance)
+		print("implement me!")
+	end)
+)
 
-function object_fetcher:anchor_part_name()
+function ObjectFetcherService:anchor_part_name()
 	return "~freeway_anchor_do_not_delete"
 end
 
-function object_fetcher:find_anchor_part(instance: Instance)
+function ObjectFetcherService:find_anchor_part(instance: Instance)
 	local parent = instance.Parent
 	if parent == nil then
 		print("###parent is nil for instance", instance.Name)
@@ -114,7 +120,7 @@ local function createPieceNetwork(name, content)
 	return json
 end
 
-function object_fetcher:createPiece(name, content)
+function ObjectFetcherService:createPiece(name, content)
 	local status, errOrResult = pcall(function()
 		return createPieceNetwork(name, content)
 	end)
@@ -133,7 +139,7 @@ function cache_key_for_object(object: ObjectInfo)
 	return key
 end
 
-function object_fetcher:meshes_from_children_traverse(node, meshes)
+function ObjectFetcherService:meshes_from_children_traverse(node, meshes)
 	if node == nil then
 		return
 	end
@@ -142,23 +148,23 @@ function object_fetcher:meshes_from_children_traverse(node, meshes)
 		return
 	end
 	for _, child in node.children do
-		object_fetcher:meshes_from_children_traverse(child, meshes)
+		ObjectFetcherService:meshes_from_children_traverse(child, meshes)
 	end
 end
 
-function object_fetcher:meshes_from_children(children)
+function ObjectFetcherService:meshes_from_children(children)
 	if children == nil then
 		return nil
 	end
 
 	local meshes = {}
 	for _, child in children do
-		object_fetcher:meshes_from_children_traverse(child, meshes)
+		ObjectFetcherService:meshes_from_children_traverse(child, meshes)
 	end
 	return meshes
 end
 
-function object_fetcher:find_children_by_path(piece, path)
+function ObjectFetcherService:find_children_by_path(piece, path)
 	if piece.metadata == nil then
 		return nil
 	end
@@ -183,7 +189,7 @@ function object_fetcher:find_children_by_path(piece, path)
 		end
 	end
 
-	local meshes = object_fetcher:meshes_from_children(current)
+	local meshes = ObjectFetcherService:meshes_from_children(current)
 	return meshes
 end
 
@@ -210,7 +216,7 @@ function find_child_by_id_traverse(node, child_id)
 end
 
 -- lookup a mesh or a material by id
-function object_fetcher:find_child_by_id(piece, child_id)
+function ObjectFetcherService:find_child_by_id(piece, child_id)
 	if child_id == nil then
 		return nil
 	end
@@ -247,7 +253,7 @@ function object_fetcher:find_child_by_id(piece, child_id)
 	if result.channels == nil then
 		return nil
 	end
-	-- print('object_fetcher:find_child_by_id: found material with channels', result.id, child_id, pbr_channel)
+	-- print('ObjectFetcherService:find_child_by_id: found material with channels', result.id, child_id, pbr_channel)
 
 	if pbr_channel == nil then
 		return {
@@ -288,13 +294,13 @@ function channel_from_material(material, channelName)
 end
 
 function update_object_hash(piece, object: ObjectInfo)
-	local child = object_fetcher:find_child_by_id(piece, object.childId)
+	local child = ObjectFetcherService:find_child_by_id(piece, object.childId)
 	if child ~= nil then
 		object.hash = child.hash
 	end
 end
 
-function object_fetcher:objectHasAsset(piece, child_id)
+function ObjectFetcherService:objectHasAsset(piece, child_id)
 	local upload = get_current_asset(piece, child_id)
 	return upload ~= nil
 end
@@ -303,7 +309,7 @@ function is_object_info_equal(info1: ObjectInfo, info2: ObjectInfo): boolean
 	return info1.id == info2.id and info1.childId == info2.childId and info1.hash == info2.hash
 end
 
-function object_fetcher:add_object_to_queue(object: ObjectInfo, queue: table, queue_name: string)
+function ObjectFetcherService:add_object_to_queue(object: ObjectInfo, queue: table, queue_name: string)
 	local exists = false
 	for _, queued_object in queue do
 		if is_object_info_equal(object, queued_object) then
@@ -320,8 +326,8 @@ function object_fetcher:add_object_to_queue(object: ObjectInfo, queue: table, qu
 	end
 end
 
-function object_fetcher:add_to_asset_save_queue(object: ObjectInfo)
-	object_fetcher:add_object_to_queue(object, object_fetcher.asset_save_queue, "asset_save_queue")
+function ObjectFetcherService:add_to_asset_save_queue(object: ObjectInfo)
+	ObjectFetcherService:add_object_to_queue(object, ObjectFetcherService.asset_save_queue, "asset_save_queue")
 end
 
 local function hasToBeAnAsset(instance, properyName)
@@ -332,14 +338,15 @@ local function hasToBeAnAsset(instance, properyName)
 	return not propertyConfig["editableImage"] and not propertyConfig["localAsset"]
 end
 
-function object_fetcher:update_instances_if_needed(instances)
+function ObjectFetcherService:update_instances_if_needed(instances)
 	for _, instance in instances do
-		object_fetcher:update_instance_if_needed(instance)
+		ObjectFetcherService:update_instance_if_needed(instance)
 	end
 end
 
-function object_fetcher:update_instance_if_needed(instance)
-	local wires = tags_util:get_instance_wires(instance)
+function ObjectFetcherService:update_instance_if_needed(instance: Instance)
+	print("hi", type(instance))
+	local wires = TagUtils.getInstanceWires(instance)
 	update_wired_instances(instance, wires, false)
 end
 
@@ -350,7 +357,11 @@ local function updateAssetIdForPieceNetwork(objectInfo, assetId)
 			-- @Post('/:id/material/:materialId/channel/:channel/upload')
 			local spit = string.split(objectInfo.childId, "-")
 			if #spit < 2 then
-				print("object_fetcher:updateAssetIdForPieceNetwork: invalid childId", objectInfo.id, objectInfo.childId)
+				print(
+					"ObjectFetcherService:updateAssetIdForPieceNetwork: invalid childId",
+					objectInfo.id,
+					objectInfo.childId
+				)
 				return
 			end
 			suffix = "/material/" .. spit[1] .. "/channel/" .. spit[2] .. "/upload"
@@ -360,7 +371,7 @@ local function updateAssetIdForPieceNetwork(objectInfo, assetId)
 	elseif objectInfo.type == "mesh" then
 		if objectInfo.childId == nil then
 			print(
-				"object_fetcher:updateAssetIdForPieceNetwork: can't update mesh without childId",
+				"ObjectFetcherService:updateAssetIdForPieceNetwork: can't update mesh without childId",
 				objectInfo.id,
 				objectInfo.childId
 			)
@@ -372,7 +383,7 @@ local function updateAssetIdForPieceNetwork(objectInfo, assetId)
 	end
 
 	local url = BASE_URL .. "/api/pieces/" .. objectInfo.id .. suffix
-	print("object_fetcher:updateAssetIdForPieceNetwork: URL: " .. url)
+	print("ObjectFetcherService:updateAssetIdForPieceNetwork: URL: " .. url)
 	local data = { hash = objectInfo.hash, assetId = "" .. assetId }
 	local jsonData = HttpService:JSONEncode(data)
 	local res = HttpService:PostAsync(url, jsonData)
@@ -381,7 +392,7 @@ local function updateAssetIdForPieceNetwork(objectInfo, assetId)
 	return json
 end
 
-function object_fetcher:updateAssetIdForPiece(pieceId, childId, hash, assetId)
+function ObjectFetcherService:updateAssetIdForPiece(pieceId, childId, hash, assetId)
 	local status, errOrResult = pcall(function()
 		updateAssetIdForPieceNetwork(pieceId, childId, hash, assetId)
 	end)
@@ -438,37 +449,37 @@ local function fetchFromNetwork(object: ObjectInfo)
 		local decodedData = base64.decode(buffer.fromstring(b64string))
 		editableImage:WritePixelsBuffer(Vector2.zero, editableImage.Size, decodedData)
 		local content = Content.fromObject(editableImage)
-		object_fetcher.cache[cache_key_for_object(object)] = { object = content, hash = object.hash }
+		ObjectFetcherService.cache[cache_key_for_object(object)] = { object = content, hash = object.hash }
 		return content
 	end
 	if object.type == "mesh" then
 		--print("mesh: fetched mesh, about to cache", object.id, object.childId, object.hash)
 		local em = RbxToEditableMesh(json.mesh)
 		print("mesh: fetched mesh, caching", object.id, object.childId, object.hash)
-		object_fetcher.cache[cache_key_for_object(object)] = { object = em, hash = object.hash }
-		object_fetcher.cache[cache_key_for_object(object) .. "_tr"] = json.translation
+		ObjectFetcherService.cache[cache_key_for_object(object)] = { object = em, hash = object.hash }
+		ObjectFetcherService.cache[cache_key_for_object(object) .. "_tr"] = json.translation
 		return
 	end
 
 	print("Object type not implemented:", object.type, object)
 end
 
-function object_fetcher:mesh_translation(object: ObjectInfo)
-	return object_fetcher.cache[cache_key_for_object(object) .. "_tr"]
+function ObjectFetcherService:mesh_translation(object: ObjectInfo)
+	return ObjectFetcherService.cache[cache_key_for_object(object) .. "_tr"]
 end
 
 -- download queue handler
 local downloadThread = task.spawn(function()
 	while true do
-		if object_fetcher.enabled ~= true then
+		if ObjectFetcherService.enabled ~= true then
 			task.wait(0.5)
 			continue
 		end
 
-		if #object_fetcher.download_queue > 0 then
-			local object = object_fetcher.download_queue[1]
-			local cached = object_fetcher.cache[cache_key_for_object(object)]
-			local exists = object_fetcher:object_exists(object)
+		if #ObjectFetcherService.download_queue > 0 then
+			local object = ObjectFetcherService.download_queue[1]
+			local cached = ObjectFetcherService.cache[cache_key_for_object(object)]
+			local exists = ObjectFetcherService:object_exists(object)
 			if exists and (cached == nil or cached.hash ~= object.hash) then
 				print("download thread: fetching an object from the network: ", object.id, object.childId, object.hash)
 				local status, err = pcall(fetchFromNetwork, object)
@@ -485,18 +496,18 @@ local downloadThread = task.spawn(function()
 				)
 			end
 
-			table.remove(object_fetcher.download_queue, 1)
+			table.remove(ObjectFetcherService.download_queue, 1)
 
 			-- TODO MI update all instances wired to this object
-			object_fetcher:update_instances_wired_to_object(object)
+			ObjectFetcherService:update_instances_wired_to_object(object)
 		else
 			task.wait(0.1)
 		end
 	end
 end)
 
-function object_fetcher:update_instances_wired_to_object(object: ObjectInfo)
-	local instance_wires = tags_util:ts_get_all_wired_in_dm()
+function ObjectFetcherService:update_instances_wired_to_object(object: ObjectInfo)
+	local instance_wires = TagUtils.ts_get_all_wired_in_dm()
 
 	for instance, wires in instance_wires do
 		local wired_to_object = false
@@ -507,14 +518,14 @@ function object_fetcher:update_instances_wired_to_object(object: ObjectInfo)
 			if #split > 1 then
 				child_id = split[2]
 			end
-			local object1 = object_fetcher:construct_object(piece_id, child_id)
+			local object1 = ObjectFetcherService:construct_object(piece_id, child_id)
 			if object1.id == object.id and object1.childId == object.childId and object1.hash == object.hash then
 				wired_to_object = true
 			end
 		end
 
 		if wired_to_object then
-			--print('object_fetcher:update_instances_wired_to_object: updating instance', instance, 'for object', object.id, object.childId)
+			--print('ObjectFetcherService:update_instances_wired_to_object: updating instance', instance, 'for object', object.id, object.childId)
 			update_wired_instances(instance, wires, false)
 		end
 	end
@@ -558,7 +569,7 @@ function saveAsset(object, objectInfo: ObjectInfo)
 		print(`success, new asset id: {idOrUploadErr}`)
 
 		-- TODO MI: Update asset id right away in wired instances
-		local result = object_fetcher:updateAssetIdForPiece(objectInfo, idOrUploadErr)
+		local result = ObjectFetcherService:updateAssetIdForPiece(objectInfo, idOrUploadErr)
 
 		if not result then
 			print(
@@ -581,28 +592,28 @@ end
 
 local assetSaveThread = task.spawn(function()
 	while true do
-		if not object_fetcher.enabled then
+		if not ObjectFetcherService.enabled then
 			task.wait(0.5)
 			continue
 		end
-		if #object_fetcher.asset_save_queue > 0 then
+		if #ObjectFetcherService.asset_save_queue > 0 then
 			-- print('saveassetsthread', 'tick')
 
-			local objectInfo = object_fetcher.asset_save_queue[1]
+			local objectInfo = ObjectFetcherService.asset_save_queue[1]
 			-- get the most recent piece from the mapping, saving_queue might be stale
-			local piece = object_fetcher.pieces_map[objectInfo.id]
+			local piece = ObjectFetcherService.pieces_map[objectInfo.id]
 			update_object_hash(piece, objectInfo)
-			if piece == nil or not object_fetcher:object_exists(objectInfo) then
-				table.remove(object_fetcher.asset_save_queue, 1) -- remove piece that doesn't exist anymore from the saving queue
+			if piece == nil or not ObjectFetcherService:object_exists(objectInfo) then
+				table.remove(ObjectFetcherService.asset_save_queue, 1) -- remove piece that doesn't exist anymore from the saving queue
 				continue
 			end
 
-			local cached = object_fetcher.cache[cache_key_for_object(objectInfo)]
+			local cached = ObjectFetcherService.cache[cache_key_for_object(objectInfo)]
 			if cached == nil or cached.hash ~= objectInfo.hash then -- new version of the asset is not cached locally
 				--print('saveassetsthread: has mismatch for ', piece.id, 'cached/current: ', cached.hash, '/', piece.hash)
 				-- 1. if it's already queued for download -- let's just wait
 				local downloading = false
-				for i, download_object in object_fetcher.download_queue do
+				for i, download_object in ObjectFetcherService.download_queue do
 					downloading = is_object_info_equal(download_object, objectInfo)
 					if downloading then
 						break
@@ -625,7 +636,7 @@ local assetSaveThread = task.spawn(function()
 					continue
 				end
 			end
-			if not object_fetcher:objectHasAsset(piece, objectInfo.childId) then
+			if not ObjectFetcherService:objectHasAsset(piece, objectInfo.childId) then
 				local result = saveAsset(cached, objectInfo)
 				if result.ok then
 					print("saved asset")
@@ -634,7 +645,7 @@ local assetSaveThread = task.spawn(function()
 				end
 			else
 			end
-			table.remove(object_fetcher.asset_save_queue, 1) -- saved asset!
+			table.remove(ObjectFetcherService.asset_save_queue, 1) -- saved asset!
 		else
 			task.wait(0.5)
 		end
@@ -644,25 +655,25 @@ end)
 function updatePendingSave()
 	local pending_save = {}
 
-	for wiredObjectId in object_fetcher.object_is_wired do
+	for wiredObjectId in ObjectFetcherService.object_is_wired do
 		local split = string.split(wiredObjectId, ":")
 		local childId = nil
 
 		if #split > 1 then
 			childId = split[2]
 		end
-		local objectInfo = object_fetcher:construct_object(split[1], childId)
-		object_fetcher:name_object(objectInfo)
+		local objectInfo = ObjectFetcherService:construct_object(split[1], childId)
+		ObjectFetcherService:name_object(objectInfo)
 
 		if objectInfo == nil then
 			continue
 		end
-		local piece = object_fetcher.pieces_map[objectInfo.id]
-		if not object_fetcher:objectHasAsset(piece, objectInfo.childId) then
+		local piece = ObjectFetcherService.pieces_map[objectInfo.id]
+		if not ObjectFetcherService:objectHasAsset(piece, objectInfo.childId) then
 			table.insert(pending_save, objectInfo)
 		end
 	end
-	object_fetcher.pending_save = pending_save
+	ObjectFetcherService.pending_save = pending_save
 end
 
 function filterUpdatedAfter(timestamp, pieces)
@@ -695,7 +706,7 @@ end
 
 local fetchThread = task.spawn(function()
 	while true do
-		if not object_fetcher.enabled then
+		if not ObjectFetcherService.enabled then
 			task.wait(0.5)
 			continue
 		end
@@ -707,8 +718,8 @@ local fetchThread = task.spawn(function()
 			if pieces == nil then
 				pieces = {}
 			end
-			object_fetcher.offline = false
-			object_fetcher.pieces = pieces
+			ObjectFetcherService.offline = false
+			ObjectFetcherService.pieces = pieces
 
 			local tmp_pieces_map = {}
 			local counter = 0
@@ -716,10 +727,9 @@ local fetchThread = task.spawn(function()
 				tmp_pieces_map[p.id] = p
 				counter = counter + 1
 			end
-			print("reset pieces_map, ", counter)
-			object_fetcher.pieces_map = tmp_pieces_map
+			ObjectFetcherService.pieces_map = tmp_pieces_map
 
-			local recents = filterUpdatedAfter(object_fetcher.updatedAt, pieces)
+			local recents = filterUpdatedAfter(ObjectFetcherService.updatedAt, pieces)
 
 			local recent_pieces_map = {}
 			for _, p in recents do
@@ -728,7 +738,7 @@ local fetchThread = task.spawn(function()
 
 			local function process_recents(recents_map: { [string]: Piece })
 				-- 1. fetch all wired instances
-				local instanceWires = tags_util.ts_get_all_wired_in_dm()
+				local instanceWires = TagUtils.ts_get_all_wired_in_dm()
 				-- 1.1 pre-fetch all wired assets
 				for _, wires in instanceWires do
 					for object_id, _ in wires do
@@ -739,21 +749,21 @@ local fetchThread = task.spawn(function()
 							child_id = split[2]
 						end
 
-						local piece = object_fetcher.pieces_map[piece_id]
+						local piece = ObjectFetcherService.pieces_map[piece_id]
 
 						if piece == nil or (child_id ~= nil and not has_child(piece, child_id)) then
 							-- a piece exists in the place, but is removed from the Freeway folder
 							continue
 						end
 
-						local objectInfo = object_fetcher:construct_object(piece.id, child_id)
-						object_fetcher:fetch(objectInfo)
+						local objectInfo = ObjectFetcherService:construct_object(piece.id, child_id)
+						ObjectFetcherService:fetch(objectInfo)
 					end
 				end
 
 				-- 1.2 wait until all assets are downloaded
 				while true do
-					if #object_fetcher.download_queue == 0 then
+					if #ObjectFetcherService.download_queue == 0 then
 						break
 					else
 						task.wait(0.05)
@@ -776,34 +786,36 @@ local fetchThread = task.spawn(function()
 
 			local function process_pieces()
 				-- 1. fetch all wired instances
-				local instanceWires = tags_util.ts_get_all_wired_in_dm()
+				local instanceWires = TagUtils.ts_get_all_wired_in_dm()
 				local object_is_wired = {}
 				for _, wires in instanceWires do
 					for object_id, _ in wires do
 						object_is_wired[object_id] = true
 					end
 				end
-				object_fetcher.object_is_wired = object_is_wired
+				ObjectFetcherService.object_is_wired = object_is_wired
 
 				-- 2. cleanup wires for missing pieces, and update all if the plugin was just relaunched
 				for instance, wires in instanceWires do
-					update_wired_instances(instance, wires, not object_fetcher.relaunched)
+					update_wired_instances(instance, wires, not ObjectFetcherService.relaunched)
 				end
-				object_fetcher.relaunched = false
+				ObjectFetcherService.relaunched = false
 
 				-- 3. Update assets pending saving
 				updatePendingSave()
 			end
 			process_pieces()
 
-			if object_fetcher.updatedAt ~= mostRecentTimestampForPieces(object_fetcher.updatedAt, recents) then
+			if
+				ObjectFetcherService.updatedAt ~= mostRecentTimestampForPieces(ObjectFetcherService.updatedAt, recents)
+			then
 				print(
 					"updating timestamp: from: ",
-					object_fetcher.updatedAt,
+					ObjectFetcherService.updatedAt,
 					"to:",
-					mostRecentTimestampForPieces(object_fetcher.updatedAt, recents)
+					mostRecentTimestampForPieces(ObjectFetcherService.updatedAt, recents)
 				)
-				object_fetcher.updatedAt = mostRecentTimestampForPieces(object_fetcher.updatedAt, recents)
+				ObjectFetcherService.updatedAt = mostRecentTimestampForPieces(ObjectFetcherService.updatedAt, recents)
 			end
 		end
 
@@ -812,7 +824,7 @@ local fetchThread = task.spawn(function()
 			local status, err = pcall(fetchPiecesFromNetwork)
 			if not status then
 				-- MI bubble the error up, display in UI
-				object_fetcher.offline = true
+				ObjectFetcherService.offline = true
 				print("Please launch Freeway app", err)
 			end
 			--print('tick, is running ', RunService:IsRunning(), RunService:IsRunMode()) -- TODO MI Why it doesn't detect it's running?
@@ -865,7 +877,7 @@ function RbxToEditableMesh(rbxMesh): EditableMesh
 	return em
 end
 
-function object_fetcher:fetch(objectInfo: ObjectInfo)
+function ObjectFetcherService:fetch(objectInfo: ObjectInfo)
 	local obj = self.cache[cache_key_for_object(objectInfo)]
 
 	--    print('fetch piece with id and hash: ', piece.id, piece.hash)
@@ -884,10 +896,10 @@ function object_fetcher:fetch(objectInfo: ObjectInfo)
 		return obj.object
 	end
 
-	object_fetcher:type_object(objectInfo)
+	ObjectFetcherService:type_object(objectInfo)
 	--print('mesh: add object to queue: ', objectInfo.id, objectInfo.childId, objectInfo.type)
 
-	object_fetcher:add_object_to_queue(objectInfo, object_fetcher.download_queue, "download queue")
+	ObjectFetcherService:add_object_to_queue(objectInfo, ObjectFetcherService.download_queue, "download queue")
 
 	return nil
 end
@@ -897,7 +909,7 @@ function get_current_asset(piece: Piece, child_id: String)
 	local hash = piece.hash
 
 	if child_id ~= nil then
-		local child = object_fetcher:find_child_by_id(piece, child_id)
+		local child = ObjectFetcherService:find_child_by_id(piece, child_id)
 		if child == nil then
 			return nil
 		end
@@ -922,8 +934,8 @@ function get_current_asset(piece: Piece, child_id: String)
 	return nil
 end
 
-function object_fetcher:get_material_channels_for_mesh(piece: Piece, child_id: String): { string }
-	local child = object_fetcher:find_child_by_id(piece, child_id)
+function ObjectFetcherService:get_material_channels_for_mesh(piece: Piece, child_id: String): { string }
+	local child = ObjectFetcherService:find_child_by_id(piece, child_id)
 	if child == nil then
 		return nil
 	end
@@ -995,15 +1007,15 @@ function has_child(piece: Piece, child_id: string): boolean
 		return false
 	end
 
-	local child = object_fetcher:find_child_by_id(piece, child_id)
+	local child = ObjectFetcherService:find_child_by_id(piece, child_id)
 	return child ~= nil
 end
 
-function object_fetcher:object_exists(objectInfo: ObjectInfo)
-	local piece = object_fetcher.pieces_map[objectInfo.id]
+function ObjectFetcherService:object_exists(objectInfo: ObjectInfo)
+	local piece = ObjectFetcherService.pieces_map[objectInfo.id]
 	if piece == nil then
 		-- print("!!!object_existst: piece not found: ", objectInfo.id)
-		for key, value in object_fetcher.pieces_map do
+		for key, value in ObjectFetcherService.pieces_map do
 			print(key, value)
 		end
 		return false
@@ -1015,18 +1027,18 @@ function object_fetcher:object_exists(objectInfo: ObjectInfo)
 	return true
 end
 
-function object_fetcher:construct_object(piece_id: string, child_id: string): ObjectInfo
-	local piece = object_fetcher.pieces_map[piece_id]
+function ObjectFetcherService:construct_object(piece_id: string, child_id: string): ObjectInfo
+	local piece = ObjectFetcherService.pieces_map[piece_id]
 	if piece == nil then
 		return nil
 	end
 	local object = { id = piece.id, childId = child_id, hash = piece.hash, type = piece.type }
-	local child = object_fetcher:find_child_by_id(object_fetcher.pieces_map[object.id], object.childId)
+	local child = ObjectFetcherService:find_child_by_id(ObjectFetcherService.pieces_map[object.id], object.childId)
 	if child ~= nil then
 		object.hash = child.hash
 	end
 
-	object_fetcher:type_object(object)
+	ObjectFetcherService:type_object(object)
 
 	if object.type == "mesh" and object.childId == nil then
 		print("mesh: construct_object: mesh with empty childId", object.id, object.childId)
@@ -1034,10 +1046,10 @@ function object_fetcher:construct_object(piece_id: string, child_id: string): Ob
 	return object
 end
 
-function object_fetcher:type_object(object: ObjectInfo)
-	local child = object_fetcher:find_child_by_id(object_fetcher.pieces_map[object.id], object.childId)
+function ObjectFetcherService:type_object(object: ObjectInfo)
+	local child = ObjectFetcherService:find_child_by_id(ObjectFetcherService.pieces_map[object.id], object.childId)
 	if child == nil then
-		object.type = object_fetcher.pieces_map[object.id].type -- use piece type as a type
+		object.type = ObjectFetcherService.pieces_map[object.id].type -- use piece type as a type
 		return
 	end
 
@@ -1053,10 +1065,10 @@ function object_fetcher:type_object(object: ObjectInfo)
 	end
 end
 
-function object_fetcher:name_object(object: ObjectInfo)
-	local child = object_fetcher:find_child_by_id(object_fetcher.pieces_map[object.id], object.childId)
+function ObjectFetcherService:name_object(object: ObjectInfo)
+	local child = ObjectFetcherService:find_child_by_id(ObjectFetcherService.pieces_map[object.id], object.childId)
 	if child == nil then
-		object.name = object_fetcher.pieces_map[object.id].name -- use piece name as a name
+		object.name = ObjectFetcherService.pieces_map[object.id].name -- use piece name as a name
 		return
 	end
 
@@ -1067,19 +1079,19 @@ function object_fetcher:name_object(object: ObjectInfo)
 
 	local split = string.split(object.childId, "-")
 	if #split > 1 then
-		object.name = object_fetcher:find_child_by_id(object_fetcher.pieces_map[object.id], split[1]).name -- use child's parent name, e.g. a name of the material
+		object.name = ObjectFetcherService:find_child_by_id(ObjectFetcherService.pieces_map[object.id], split[1]).name -- use child's parent name, e.g. a name of the material
 		object.name = object.name .. "-" .. split[2] -- add the channel name
 	end
 end
 
-function object_fetcher:create_new_mesh_part(parent: Instance, node: meshNode, piece: Piece)
+function ObjectFetcherService:create_new_mesh_part(parent: Instance, node: meshNode, piece: Piece)
 	local part = Instance.new("MeshPart")
 	part.Name = node.name
 	part.Size = Vector3.new(2, 2, 2)
 	part.CanCollide = true
 	part.Parent = parent
-	tags_util:wire_instance(part, "" .. piece.id .. ":" .. node.id, "MeshId")
-	local material = object_fetcher:get_material_channels_for_mesh(piece, node.id)
+	TagUtils.wireInstance(part, "" .. piece.id .. ":" .. node.id, "MeshId")
+	local material = ObjectFetcherService:get_material_channels_for_mesh(piece, node.id)
 	local surfaceAppearance = nil
 	print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
 	if material ~= nil and material.channels ~= nil and #material.channels > 0 then
@@ -1097,7 +1109,7 @@ function object_fetcher:create_new_mesh_part(parent: Instance, node: meshNode, p
 				propertyName = "RoughnessMap"
 			end
 
-			tags_util:wire_instance(
+			TagUtils.wireInstance(
 				surfaceAppearance,
 				"" .. piece.id .. ":" .. material.id .. "-" .. channel.name,
 				propertyName
@@ -1107,7 +1119,7 @@ function object_fetcher:create_new_mesh_part(parent: Instance, node: meshNode, p
 	end
 end
 
-function object_fetcher:reset_texture_channel(instance: Instance, propertyName: string): meshNode
+function ObjectFetcherService:reset_texture_channel(instance: Instance, propertyName: string): meshNode
 	print("### resetting texture channel", instance, propertyName)
 	local imagePropertyConfig = WireableProperties:get_image_property_configuration(instance.ClassName, propertyName)
 	print("### image prop config", imagePropertyConfig)
@@ -1115,7 +1127,7 @@ function object_fetcher:reset_texture_channel(instance: Instance, propertyName: 
 		instance[imagePropertyConfig["editableProperty"]] = Content.none
 	end
 end
-function object_fetcher:update_material_if_needed(parent: Instance, node: meshNode, piece: Piece)
+function ObjectFetcherService:update_material_if_needed(parent: Instance, node: meshNode, piece: Piece)
 	print("## update_material_if_needed")
 	local surfaceAppearance = nil
 	for _, child in parent:GetChildren() do
@@ -1124,7 +1136,7 @@ function object_fetcher:update_material_if_needed(parent: Instance, node: meshNo
 			break
 		end
 	end
-	local material = object_fetcher:get_material_channels_for_mesh(piece, node.id)
+	local material = ObjectFetcherService:get_material_channels_for_mesh(piece, node.id)
 	if (material == nil or material.channels == nil or #material.channels == 0) and surfaceAppearance ~= nil then
 		-- remove surface appearance if no material is found
 		print(
@@ -1155,7 +1167,7 @@ function object_fetcher:update_material_if_needed(parent: Instance, node: meshNo
 				propertyName = "RoughnessMap"
 			end
 			properties[propertyName] = true
-			tags_util:wire_instance(
+			TagUtils.wireInstance(
 				surfaceAppearance,
 				"" .. piece.id .. ":" .. material.id .. "-" .. channel.name,
 				propertyName
@@ -1164,7 +1176,7 @@ function object_fetcher:update_material_if_needed(parent: Instance, node: meshNo
 		for channelName, state in properties do
 			if not state then
 				-- reset the channel if it is not in the material
-				object_fetcher:reset_texture_channel(surfaceAppearance, channelName)
+				ObjectFetcherService:reset_texture_channel(surfaceAppearance, channelName)
 			end
 		end
 	end
@@ -1183,20 +1195,20 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 		end
 
 		-- 1. check if the piece (and it's child) still exists and was recently updated
-		local piece = object_fetcher.pieces_map[piece_id]
+		local piece = ObjectFetcherService.pieces_map[piece_id]
 
 		local missingChild = true
 		if propertyName ~= "Model" then
-			missingChild = not object_fetcher:object_exists({ id = piece_id, childId = child_id })
+			missingChild = not ObjectFetcherService:object_exists({ id = piece_id, childId = child_id })
 		else
 			if piece == nil then
 				print("###Model is wired to a piece that does not exist: " .. piece_id .. ", " .. child_id)
-				tags_util:unwire_instance(instance, propertyName)
+				TagUtils.unwireInstance(instance, propertyName)
 				continue
 			end
 			-- for gltf sub-hierarchies, e.g. scenes or collections, first add/remove mesh parts, add/remove surface appearances
 			-- TODO MI check if the instance is a model
-			local meshes = object_fetcher:find_children_by_path(piece, child_id)
+			local meshes = ObjectFetcherService:find_children_by_path(piece, child_id)
 
 			local mesh_map, mesh_part_state = {}, {}
 			for _, mesh in meshes do
@@ -1207,10 +1219,10 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			local removed, inserted = 0, 0
 
 			for _, descendant in instance:GetDescendants() do
-				if not tags_util:is_instance_wired(descendant) then
+				if not TagUtils.isInstanceWired(descendant) then
 					continue
 				end
-				local wires = tags_util:get_instance_wires(descendant)
+				local wires = TagUtils.getInstanceWires(descendant)
 				if not descendant:IsA("MeshPart") then
 					continue
 				end
@@ -1243,14 +1255,14 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 						removed = removed + 1
 					else
 						print("## update_material_if_needed")
-						object_fetcher:update_material_if_needed(descendant, mesh_map[child_id], piece)
+						ObjectFetcherService:update_material_if_needed(descendant, mesh_map[child_id], piece)
 					end
 				end
 			end
 			for mesh_id, mesh_part_exists in mesh_part_state do
 				if not mesh_part_exists then
 					-- insert new mesh part with material
-					object_fetcher:create_new_mesh_part(instance, mesh_map[mesh_id], piece)
+					ObjectFetcherService:create_new_mesh_part(instance, mesh_map[mesh_id], piece)
 					inserted = inserted + 1
 				end
 			end
@@ -1273,15 +1285,15 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			continue
 		end
 
-		local object = object_fetcher:construct_object(piece_id, child_id)
-		object_fetcher:name_object(object)
+		local object = ObjectFetcherService:construct_object(piece_id, child_id)
+		ObjectFetcherService:name_object(object)
 
 		-- 2. Update wired instance according to the piece type
 		-- 2.1 images. Based on 3 possible image content types set either Roblox asset Id, or local asset id, or editable image
 		if object.type == "image" then
 			local imagePropertyConfig =
 				WireableProperties:get_image_property_configuration(instance.ClassName, propertyName)
-			local hasAsset = object_fetcher:objectHasAsset(piece, child_id)
+			local hasAsset = ObjectFetcherService:objectHasAsset(piece, child_id)
 			-- print(instance.ClassName, propertyName, hasAsset, get_current_asset_id(piece, child_id))
 			if hasAsset then
 				local assetId = get_current_asset_id(piece, child_id)
@@ -1294,18 +1306,21 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			-- example: SurfaceAppearance roughness/metalness/normal map
 			if hasToBeAnAsset(instance, propertyName) then
 				--                print('update_wired_instances: add to asset save queue', object.id, object.childId, object.hash, debug.traceback())
-				local cached = object_fetcher.cache[cache_key_for_object(object)]
+				local cached = ObjectFetcherService.cache[cache_key_for_object(object)]
 				if cached == nil then
-					object_fetcher:add_object_to_queue(object, object_fetcher.download_queue, "download queue")
+					ObjectFetcherService:add_object_to_queue(
+						object,
+						ObjectFetcherService.download_queue,
+						"download queue"
+					)
 				end
-				object_fetcher:add_to_asset_save_queue(object)
+				ObjectFetcherService:add_to_asset_save_queue(object)
 				continue
 			end
 
 			if imagePropertyConfig["editableImage"] then -- try editable image first, default to local asset otherwise
-				print("set editable image..")
 				-- TODO MI take object hash into account!
-				local ei = object_fetcher:fetch(object)
+				local ei = ObjectFetcherService:fetch(object)
 				if ei == nil then
 					print("cant fetch image to set Content for ", piece.id, child_id)
 					continue
@@ -1313,7 +1328,6 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 				print("about to apply EditableImage")
 				instance[imagePropertyConfig["editableProperty"]] = ei
 			elseif imagePropertyConfig["localAsset"] then
-				print("set local asset..")
 				local extension = "png"
 				-- local status, parsed_extension = pcall(function() return get_extension(piece.name) end)
 				-- if status then
@@ -1325,8 +1339,8 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 		elseif object.type == "mesh" then -- if a gltf file
 			-- print('mesh:about to apply mesh 1')
 
-			local hasAsset = object_fetcher:objectHasAsset(piece, child_id)
-			local child = object_fetcher:find_child_by_id(piece, child_id)
+			local hasAsset = ObjectFetcherService:objectHasAsset(piece, child_id)
+			local child = ObjectFetcherService:find_child_by_id(piece, child_id)
 
 			if not child.isMesh then -- material image channel, handle in the image piece above?
 				print("mesh: material image channels are not implemented yet!", child.isMesh, child)
@@ -1335,7 +1349,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			local newMeshPart
 			-- print('mesh: about to apply mesh2')
 			if not hasAsset then
-				local em = object_fetcher:fetch(object)
+				local em = ObjectFetcherService:fetch(object)
 				if em == nil then
 					print("mesh: waiting for a cached mesh", object.id, object.childId, object.hash)
 					continue
@@ -1351,9 +1365,9 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			end
 			instance.Size = newMeshPart.MeshSize
 			instance:ApplyMesh(newMeshPart)
-			local anchor = object_fetcher:find_anchor_part(instance)
+			local anchor = ObjectFetcherService:find_anchor_part(instance)
 			if anchor ~= nil then
-				local tr = object_fetcher:mesh_translation(object)
+				local tr = ObjectFetcherService:mesh_translation(object)
 				instance.Position = anchor.Position + Vector3.new(tr[1], tr[2], tr[3])
 			end
 		else
@@ -1363,13 +1377,13 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 	-- 4. persist current wiring config to tags
 	if needsTagsUpdate then
 		print("tags need an update!")
-		tags_util:set_instance_wires(instance, wires)
+		TagUtils.setInstanceWires(instance, wires)
 	end
 
 	return maxTimestamp
 end
 
-function object_fetcher:meshes_list(node)
+function ObjectFetcherService:meshes_list(node)
 	local meshes = {}
 	meshes_list_traverse(node, meshes)
 	return meshes
@@ -1390,17 +1404,18 @@ function meshes_list_traverse(node, meshes)
 	end
 end
 
-function object_fetcher:setEnabled(enabled)
-	print("object_fetcher:setEnabled: ", enabled)
+function ObjectFetcherService:setEnabled(enabled: boolean)
 	self.enabled = enabled
 end
 
-function object_fetcher:stop()
-	print("object_fetcher:stop", "Stopping Freeway...")
-
+function ObjectFetcherService:stop()
 	task.cancel(downloadThread)
 	task.cancel(fetchThread)
 	task.cancel(assetSaveThread)
+
+	for _, item in connections do
+		item:Disconnect()
+	end
 end
 
-return object_fetcher
+return ObjectFetcherService
