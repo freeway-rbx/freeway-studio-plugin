@@ -38,7 +38,7 @@ function TagUtils.shouldRebuildWirersStat(selectedInstances, instance)
 	return updateWirersState
 end
 
-function TagUtils.wireInstance(instance: Instance, object_id, property: string)
+function TagUtils.wireInstance(instance: Instance, object_id, property: string, deep: boolean)
 	local wires = TagUtils.getInstanceWires(instance)
 
 	-- remove existing wire for property
@@ -47,6 +47,9 @@ function TagUtils.wireInstance(instance: Instance, object_id, property: string)
 			wires[w_piece_id] = nil
 			break
 		end
+	end
+	if deep then
+		property = property .. DEEP_SUFFIX
 	end
 	wires[object_id] = property
 	TagUtils.setInstanceWires(instance, wires)
@@ -67,8 +70,8 @@ end
 
 function TagUtils.isDeepWired(instance: Instance, property: string): boolean
     local property_wires = getInstanceWiresInternal(instance)
-    for object_id, property in property_wires do
-        local property_replaced, count = string.gsub(property, DEEP_SUFFIX, "")    
+    for object_id, current_property in property_wires do
+        local property_replaced, count = string.gsub(current_property, DEEP_SUFFIX, "")    
         if property == property_replaced and count > 0 then
             return true
         end
