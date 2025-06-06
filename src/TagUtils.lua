@@ -11,20 +11,13 @@ local DEEP_SUFFIX = ':deep'
 local TagUtils = {}
 
 function TagUtils.getInstanceWires(instance: Instance)
-	if not instance:HasTag(TAG_WIRED) then
-		return {}
-	end
-	for _, tag in instance:GetTags() do
-		local replaced, count = string.gsub(tag, TAG_PREFIX, "")
-		if count < 1 then
-			--print('skipping tag ' .. tag)
-			continue
-		end
-		-- todo MI handle json parsing errors
-		local property_wires = HttpService:JSONDecode(replaced) :: {}
-		return property_wires
-	end
-	return {}
+	local property_wires = getInstanceWiresInternal(instance)
+    local cleaned_up = {}
+    for object_id, property in property_wires do
+        property = string.gsub(property, DEEP_SUFFIX, "")    
+        cleaned_up[object_id] = property
+    end    
+    return cleaned_up
 end
 
 function TagUtils.shouldRebuildWirersStat(selectedInstances, instance)
@@ -70,7 +63,7 @@ end
 
 function TagUtils.isDeepWired(instance: Instance, property: string): boolean
     local property_wires = getInstanceWiresInternal(instance)
-    for object_id, current_property in property_wires do
+    for _, current_property in property_wires do
         local property_replaced, count = string.gsub(current_property, DEEP_SUFFIX, "")    
         if property == property_replaced and count > 0 then
             return true
@@ -98,7 +91,7 @@ function getInstanceWiresInternal(instance: Instance): {}
 end
 
 
-function TagUtils:setInstanceWiresRespectDeep(instance: Instance, wires: {}, respect_deep: boolean?)
+function TagUtils.setInstanceWiresRespectDeep(instance: Instance, wires: {}, respect_deep: boolean?)
     -- cleanup tags
     local current_wires = getInstanceWiresInternal(instance)
 
@@ -133,13 +126,7 @@ function TagUtils:setInstanceWiresRespectDeep(instance: Instance, wires: {}, res
 end    
 
 function TagUtils.setInstanceWires(instance: Instance, wires: {})
-    local property_wires = getInstanceWiresInternal(instance)
-    local cleaned_up = {}
-    for object_id, property in property_wires do
-        property = string.gsub(property, DEEP_SUFFIX, "")    
-        cleaned_up[object_id] = property
-    end    
-    return cleaned_up
+	TagUtils.setInstanceWiresRespectDeep(instance, wires, true)
 end
 
 function TagUtils.ts_get_all_wired_in_dm(): { [Instance]: { string: string } }
