@@ -10,6 +10,7 @@ local StudioComponents = require(Freeway.Packages.studiocomponents)
 local TagUtils = require(Freeway.TagUtils)
 
 local SceneComponent = React.Component:extend("SceneComponent")
+local e = React.createElement
 
 function SceneComponent:onClickSyncButton()
 	local state = self.state
@@ -266,15 +267,13 @@ function SceneComponent:render()
 			children = { self.props.piece.metadata },
 		}
 	end
-
 	local tree, parents = {}, {}
 	self:traverseModel(model, 0, tree, parents)
-
+	
 	local nodesMap = {}
 	for i, node in tree do
 		nodesMap["treeNode" .. i] = node
 	end
-
 	return React.createElement("Frame", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(0, 0, 0, 0),
