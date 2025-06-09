@@ -1,0 +1,17 @@
+{
+    "name": "Freeway",
+    "tree": {
+        "$className": "DataModel",
+
+        "ServerScriptService": {
+            "$className": "ServerScriptService",
+
+            "Freeway": {
+                "$path": "src",
+                "Packages": {
+                    "$path": "Packages"
+                }
+            }
+        }
+    }
+}
