@@ -8,7 +8,7 @@ local StudioService = game:GetService("StudioService")
 local WireableProperties = require(Freeway.WireableProperties)
 local base64 = require(Freeway.Packages.base64)
 local TagUtils = require(Freeway.TagUtils)
-
+local Cryo = require(Freeway.Packages.Cryo)
 local POLL_RATE_SECONDS = 3
 local BASE_URL = "http://localhost:3000"
 
@@ -145,6 +145,9 @@ function ObjectFetcherService:meshes_from_children_traverse(node, meshes)
 	end
 	if node.isMesh then
 		table.insert(meshes, node)
+		return
+	end
+	if node.children == nil then
 		return
 	end
 	for _, child in node.children do
@@ -751,8 +754,21 @@ local fetchThread = task.spawn(function()
 					end
 				end
 
-				-- 2. find instances wired to the recents
+				-- 1.3 handle models first, so we can update linked scenes
+				local models, others = {}, {}
 				for instance, wires in instanceWires do
+					if instance:IsA("Model") then
+						table.insert(models, { instance = instance, wires = wires })
+					else
+						table.insert(others, { instance = instance, wires = wires })
+					end
+				end
+				instanceWires = Cryo.List.join(models, others)
+				
+				-- 2. find instances wired to the recents
+				for _, iWires in instanceWires do
+					local instance, wires = iWires.instance, iWires.wires
+
 					for object_id, _ in wires do
 						local split = string.split(object_id, ":")
 						local piece_id = split[1]
@@ -1103,7 +1119,7 @@ function ObjectFetcherService:reset_texture_channel(instance: Instance, property
 	end
 end
 function ObjectFetcherService:update_material_if_needed(parent: Instance, node: meshNode, piece: Piece)
-	print("## update_material_if_needed")
+	--print("## update_material_if_needed")
 	local surfaceAppearance = nil
 	for _, child in parent:GetChildren() do
 		if child:IsA("SurfaceAppearance") then
@@ -1229,7 +1245,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 						descendant:Destroy()
 						removed = removed + 1
 					else
-						print("## update_material_if_needed")
+						--print("## update_material_if_needed")
 						ObjectFetcherService:update_material_if_needed(descendant, mesh_map[child_id], piece)
 					end
 				end
@@ -1243,14 +1259,13 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			end
 
 			if removed ~= 0 or inserted ~= 0 then
-				print("###updated the model, inserted: ", inserted, "removed: ", removed)
+				print("###updated the model, inserted: ", inserted, "removed: ", removed, debug.traceback())
 			end
 
 			continue
 		end
-		--        print('11update_wired_instances: ', piece_id, child_id, 'missingChild:', missingChild, piece == nil)
 		if piece == nil or missingChild then
-			print("remove a wire with non-existent object_id: " .. object_id, "cleanup only", cleanup_only)
+			print("remove a wire with non-existent object_id: " .. object_id, "cleanup only", cleanup_only, debug.traceback())
 			print("TODO Implement the resetting of the Editable/Local asset")
 			wires[object_id] = nil -- remove wire for missing piece
 			needsTagsUpdate = true
@@ -1311,18 +1326,20 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 				local assetUrl = "rbxasset://freeway/" .. piece.id .. "-" .. piece.hash .. "." .. extension
 				instance[propertyName] = assetUrl
 			end
-		elseif object.type == "mesh" then -- if a gltf file
+		elseif object.type == "mesh" then -- a gltf file, only valid with child_id(a mesh inside a gltf file)
 			-- print('mesh:about to apply mesh 1')
 
 			local hasAsset = ObjectFetcherService:objectHasAsset(piece, child_id)
 			local child = ObjectFetcherService:find_child_by_id(piece, child_id)
-
+			
+			ObjectFetcherService:update_material_if_needed(instance, child, piece)
+			
 			if not child.isMesh then -- material image channel, handle in the image piece above?
 				print("mesh: material image channels are not implemented yet!", child.isMesh, child)
 				continue
 			end
 			local newMeshPart
-			-- print('mesh: about to apply mesh2')
+			-- update mesh part's geometry
 			if not hasAsset then
 				local em = ObjectFetcherService:fetch(object)
 				if em == nil then
