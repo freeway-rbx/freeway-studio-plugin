@@ -6,10 +6,10 @@ realm = "server"
 private = true
 
 [dependencies]
-React = "jsdotlua/react@17.1.0"
-ReactRoblox = "jsdotlua/react-roblox@17.1.0"
+React = "jsdotlua/react@17.2.1"
+ReactRoblox = "jsdotlua/react-roblox@17.2.1"
 Cryo = "uglypoe/cryo@1.0.3"
 CreateSharedToolbar = "stravant/create-shared-toolbar@0.1.0"
 base64 = "reselim/base64@3.0.0"
-studiocomponents = "sircfenner/studiocomponents@1.0.0"
+studiocomponents = "sircfenner/studiocomponents@1.2.0"
 GoodSignal = "stravant/goodsignal@0.3.0"
