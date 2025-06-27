@@ -95,7 +95,7 @@ function TagUtils.setInstanceWiresRespectDeep(instance: Instance, wires: {}, res
     -- cleanup tags
     local current_wires = getInstanceWiresInternal(instance)
 
-    print('set_instance_wires_respect_deep!', wires)
+    --print('set_instance_wires_respect_deep!', wires)
     instance:RemoveTag(TAG_WIRED)
     
     -- re-setup tags

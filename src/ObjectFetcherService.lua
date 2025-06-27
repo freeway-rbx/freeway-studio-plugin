@@ -793,7 +793,11 @@ local fetchThread = task.spawn(function()
 				-- 1. fetch all wired instances
 				local instanceWires = TagUtils.ts_get_all_wired_in_dm()
 				local object_is_wired = {}
-				for _, wires in instanceWires do
+				for instance, wires in instanceWires do
+					if instance:IsA("Model") then -- model is a container for gltfs, only individual meshes are potentially saved as assets
+						continue
+
+					end
 					for object_id, _ in wires do
 						object_is_wired[object_id] = true
 					end
@@ -1084,7 +1088,7 @@ function ObjectFetcherService:create_new_mesh_part(parent: Instance, node: meshN
 	TagUtils.wireInstance(part, "" .. piece.id .. ":" .. node.id, "MeshId")
 	local material = ObjectFetcherService:get_material_channels_for_mesh(piece, node.id)
 	local surfaceAppearance = nil
-	print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
+	--print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
 	if material ~= nil and material.channels ~= nil and #material.channels > 0 then
 		surfaceAppearance = Instance.new("SurfaceAppearance")
 		surfaceAppearance.Parent = part
@@ -1139,7 +1143,7 @@ function ObjectFetcherService:update_material_if_needed(parent: Instance, node: 
 	end
 
 	if material ~= nil and material.channels ~= nil and #material.channels > 0 then
-		print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
+		--print("ADDING SURFACE APPEARANCE", material ~= nil and material.channels ~= nil and #material.channels > 0)
 		if surfaceAppearance == nil then
 			-- create a new surface appearance if it doesn't exist
 			surfaceAppearance = Instance.new("SurfaceAppearance")
@@ -1341,7 +1345,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			local newMeshPart
 			-- update mesh part's geometry
 			if not hasAsset then
-				print("mesh: fetching mesh", object.id, object.childId, object.hash)
+				--print("mesh: fetching mesh", object.id, object.childId, object.hash)
 
 				local em = ObjectFetcherService:fetch(object)
 				if em == nil then
