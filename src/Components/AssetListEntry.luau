@@ -1,6 +1,7 @@
 local Freeway = script:FindFirstAncestor("Freeway")
 local React = require(Freeway.Packages.React)
 local StudioComponents = require(Freeway.Packages.studiocomponents)
+local PluginEnum = require(Freeway.Enum)
 
 local e = React.createElement
 
@@ -30,6 +31,7 @@ local function AssetListEntry(props: {
 		Position = UDim2.fromScale(0.5, 0.5),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Size = UDim2.new(1, 0, 0, 40),
+		LayoutOrder = props.LayoutOrder,
 		BackgroundTransparency = 1,
 	}, {
 		UICorner = e("UICorner", {
@@ -37,10 +39,9 @@ local function AssetListEntry(props: {
 		}),
 
 		UIPadding = e("UIPadding", {
-			PaddingLeft = UDim.new(0.005, 0),
-			PaddingRight = UDim.new(0.005, 0),
-			PaddingTop = UDim.new(0.1, 0),
-			PaddingBottom = UDim.new(0.1, 0),
+			PaddingLeft = UDim.new(0, 10),
+			PaddingTop = UDim.new(0, 5),
+
 		}),
 
 		UIListLayout = e("UIListLayout", {
@@ -51,34 +52,30 @@ local function AssetListEntry(props: {
 			FillDirection = Enum.FillDirection.Horizontal,
 		}),
 
-		Icon = e("ImageLabel", {
-			BackgroundTransparency = 0,
-			Size = UDim2.fromScale(0, 1),
-			Image = props.Icon,
-			BackgroundColor3 = Color3.fromRGB(60, 60, 60),
-			LayoutOrder = 1,
-		}, {
-			UIAspectRatioConstraint = e("UIAspectRatioConstraint", {
-				DominantAxis = Enum.DominantAxis.Height,
-				AspectType = Enum.AspectType.ScaleWithParentSize,
-				AspectRatio = 1,
-			}),
+		-- Icon = e("ImageLabel", {
+		-- 	BackgroundTransparency = 0,
+		-- 	Size = UDim2.fromScale(0, 1),
+		-- 	Image = props.Icon,
+		-- 	BackgroundColor3 = Color3.fromRGB(60, 60, 60),
+		-- 	LayoutOrder = 1,
+		-- }, {
+		-- 	UIAspectRatioConstraint = e("UIAspectRatioConstraint", {
+		-- 		DominantAxis = Enum.DominantAxis.Height,
+		-- 		AspectType = Enum.AspectType.ScaleWithParentSize,
+		-- 		AspectRatio = 1,
+		-- 	}),
 
-			UICorner = e("UICorner", {
-				CornerRadius = UDim.new(0, 4),
-			}),
-		}),
+		-- 	UICorner = e("UICorner", {
+		-- 		CornerRadius = UDim.new(0, 4),
+		-- 	}),
+		-- }),
 
 		Title = e("TextLabel", {
 			Text = props.Title,
-			Font = Enum.Font.SourceSansBold,
-			TextScaled = true,
 			BackgroundTransparency = 1,
-			TextColor3 = Color3.fromRGB(255, 255, 255),
 			TextXAlignment = Enum.TextXAlignment.Left,
-			Size = UDim2.fromScale(0.4, 1),
-			Position = UDim2.fromScale(0.5, 0.5),
-			AnchorPoint = Vector2.new(0.5, 0.5),
+						AutomaticSize = Enum.AutomaticSize.XY,
+
 			LayoutOrder = 2,
 		}, {
 			UISizeConstraint = e("UISizeConstraint", {
@@ -86,16 +83,6 @@ local function AssetListEntry(props: {
 				MaxSize = Vector2.new(500, 200),
 			}),
 
-			UIStroke = e("UIStroke", {
-				Thickness = 1,
-				Color = Color3.fromRGB(0, 0, 0),
-				Transparency = 0,
-			}),
-
-			UITextSizeConstraint = e("UITextSizeConstraint", {
-				MinTextSize = 0,
-				MaxTextSize = 20,
-			}),
 		}),
 
 		ActionButtonHolder = e("Frame", {

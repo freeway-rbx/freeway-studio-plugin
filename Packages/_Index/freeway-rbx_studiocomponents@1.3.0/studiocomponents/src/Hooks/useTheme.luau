@@ -26,7 +26,7 @@ local React = require(script.Parent.Parent.Parent:FindFirstChild('react'))
 
 local ThemeContext = require(script.Parent.Parent:FindFirstChild('Contexts'):FindFirstChild('ThemeContext'))
 
-local function useTheme()
+local function useTheme(): StudioTheme
 	local theme = React.useContext(ThemeContext)
 	local studioTheme, setStudioTheme = React.useState(Studio.Theme)
 

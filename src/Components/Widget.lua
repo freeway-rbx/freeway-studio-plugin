@@ -8,9 +8,10 @@ local PieceComponent = require(Freeway.Components.PieceComponent)
 local PieceDetailsComponent = require(Freeway.Components.PieceDetailsComponent)
 local PluginEnum = require(Freeway.Enum)
 local React = require(Freeway.Packages.React)
-local SceneComponent = require(Freeway.Components.SceneComponent)
+local SceneComponent = require(Freeway.Components.SceneHierarchyComponent)
 local TagUtils = require(Freeway.TagUtils)
 local UIUtils = require(Freeway.Components.UIUtils)
+local StudioComponents = require(Freeway.Packages.studiocomponents)
 
 local Widget = React.Component:extend("Widget")
 
@@ -442,6 +443,63 @@ end
 function Widget:renderPlayground()
 	local i = 1
 	local elements = {}
+	if true then 
+	return React.createElement("Frame", {
+		Size = UDim2.new(0, 1, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+
+		BackgroundTransparency = 1,
+	}, {
+		React.createElement(StudioComponents.Background, {}, {
+			uiListLayout = React.createElement("UIListLayout", {
+				HorizontalAlignment = Enum.HorizontalAlignment.Left,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				FillDirection = Enum.FillDirection.Vertical,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+			}),
+			Audio = React.createElement(StudioComponents.Collapsible, {
+				Title = "Audio",
+				IsBlockStyle = true,
+				LayoutOrder = 1, 
+			}, {
+				a1 = React.createElement(StudioComponents.Collapsible, {
+					Title = "Audio1",
+					IsBlockStyle = false,
+					LayoutOrder = 1}, {
+						a2 = React.createElement(StudioComponents.Collapsible, {
+							Title = "Audio2",
+							IsBlockStyle = false,
+							LayoutOrder = 1}, {
+								a3 = React.createElement(StudioComponents.Collapsible, {
+									Title = "Audio3",
+									IsBlockStyle = false,
+									LayoutOrder = 1}, {
+										a4 = React.createElement(StudioComponents.Collapsible, {
+											Title = "Audio4",
+											IsBlockStyle = false,
+											LayoutOrder = 1}, {
+												a5 = React.createElement(StudioComponents.Collapsible, {
+													Title = "Audio5",
+													IsBlockStyle = false,
+													LayoutOrder = 1}, {
+						
+						
+													})
+											}), 
+						
+									})
+							}), 
+					}),
+
+				
+			}),
+		})
+	})
+	end
+
+
+	
+
 	for k, element in self.state.elements do
 		local sourceText = React.createElement("Frame", {
 			Size = UDim2.new(0, 0, 0, 0),

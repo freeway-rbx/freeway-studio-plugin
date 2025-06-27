@@ -175,9 +175,15 @@ function ObjectFetcherService:find_children_by_path(piece, path)
 		return nil
 	end
 
-	local split = string.split(path, "/")
+	
 	local current = { piece.metadata }
-	print("### find_children_by_path: split path", HttpService:JSONEncode(split))
+
+	-- means that a whole gltf file is wired
+	if path == nil or path == "" then
+		return ObjectFetcherService:meshes_from_children(current)
+	end
+
+	local split = string.split(path, "/")
 	for _, childName in split do
 		local found = false
 		for _, child in current do
@@ -741,6 +747,7 @@ local fetchThread = task.spawn(function()
 						end
 
 						local objectInfo = ObjectFetcherService:construct_object(piece.id, child_id)
+						print("fetching object", objectInfo.id, objectInfo.childId, objectInfo.type)
 						ObjectFetcherService:fetch(objectInfo)
 					end
 				end
@@ -765,6 +772,7 @@ local fetchThread = task.spawn(function()
 				end
 				instanceWires = Cryo.List.join(models, others)
 				
+
 				-- 2. find instances wired to the recents
 				for _, iWires in instanceWires do
 					local instance, wires = iWires.instance, iWires.wires
@@ -872,14 +880,6 @@ function ObjectFetcherService:fetch(objectInfo: ObjectInfo)
 	local obj = self.cache[cache_key_for_object(objectInfo)]
 
 	--    print('fetch piece with id and hash: ', piece.id, piece.hash)
-	if objectInfo.type == "mesh" then
-		-- print('mesh: fetch: target',  objectInfo.id, objectInfo.childId, objectInfo.hash)
-		if obj == nil then
-			-- print('mesh: no cache for target')
-		else
-			-- print('mesh: fetch: cached object vs target ', objectInfo.hash == obj.hash, objectInfo.hash, obj.hash)
-		end
-	end
 	if obj ~= nil and obj.hash == objectInfo.hash then
 		if obj.type == "mesh" then
 			-- print('mesh: mesh cached, returning', objectInfo.id, objectInfo.childId, objectInfo.type)
@@ -887,9 +887,9 @@ function ObjectFetcherService:fetch(objectInfo: ObjectInfo)
 		return obj.object
 	end
 
+	
 	ObjectFetcherService:type_object(objectInfo)
 	--print('mesh: add object to queue: ', objectInfo.id, objectInfo.childId, objectInfo.type)
-
 	ObjectFetcherService:add_object_to_queue(objectInfo, ObjectFetcherService.download_queue, "download queue")
 
 	return nil
@@ -1276,6 +1276,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 		end
 
 		local object = ObjectFetcherService:construct_object(piece_id, child_id)
+		
 		ObjectFetcherService:name_object(object)
 
 		-- 2. Update wired instance according to the piece type
@@ -1309,7 +1310,6 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			end
 
 			if imagePropertyConfig["editableImage"] then -- try editable image first, default to local asset otherwise
-				-- TODO MI take object hash into account!
 				local ei = ObjectFetcherService:fetch(object)
 				if ei == nil then
 					print("cant fetch image to set Content for ", piece.id, child_id)
@@ -1341,6 +1341,8 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			local newMeshPart
 			-- update mesh part's geometry
 			if not hasAsset then
+				print("mesh: fetching mesh", object.id, object.childId, object.hash)
+
 				local em = ObjectFetcherService:fetch(object)
 				if em == nil then
 					print("mesh: waiting for a cached mesh", object.id, object.childId, object.hash)

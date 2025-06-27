@@ -4,6 +4,7 @@ return {
 	Background = require(script:FindFirstChild('Components'):FindFirstChild('Background')),
 	Button = require(script:FindFirstChild('Components'):FindFirstChild('Button')),
 	Checkbox = require(script:FindFirstChild('Components'):FindFirstChild('Checkbox')),
+	Collapsible = require(script:FindFirstChild('Components'):FindFirstChild('Collapsible')),
 	ColorPicker = require(script:FindFirstChild('Components'):FindFirstChild('ColorPicker')),
 	DatePicker = require(script:FindFirstChild('Components'):FindFirstChild('DatePicker')),
 	Dropdown = require(script:FindFirstChild('Components'):FindFirstChild('Dropdown')),
