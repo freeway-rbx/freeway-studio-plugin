@@ -78,7 +78,7 @@ table.insert(
 	connections,
 	CollectionService:GetInstanceRemovedSignal("wired"):Connect(function(instance)
 		--ObjectFetcherService:update_instance_if_needed(instance)
-		print("implement me!")
+		--print("implement me!")
 	end)
 )
 
@@ -456,7 +456,7 @@ local function fetchFromNetwork(object: ObjectInfo)
 	if object.type == "mesh" then
 		--print("mesh: fetched mesh, about to cache", object.id, object.childId, object.hash)
 		local em = RbxToEditableMesh(json.mesh)
-		print("mesh: fetched mesh, caching", object.id, object.childId, object.hash)
+		--print("mesh: fetched mesh, caching", object.id, object.childId, object.hash)
 		ObjectFetcherService.cache[cache_key_for_object(object)] = { object = em, hash = object.hash }
 		ObjectFetcherService.cache[cache_key_for_object(object) .. "_tr"] = json.translation
 		return
@@ -747,7 +747,6 @@ local fetchThread = task.spawn(function()
 						end
 
 						local objectInfo = ObjectFetcherService:construct_object(piece.id, child_id)
-						print("fetching object", objectInfo.id, objectInfo.childId, objectInfo.type)
 						ObjectFetcherService:fetch(objectInfo)
 					end
 				end
@@ -1104,20 +1103,20 @@ function ObjectFetcherService:create_new_mesh_part(parent: Instance, node: meshN
 				propertyName = "RoughnessMap"
 			end
 
-			TagUtils.wireInstance(
-				surfaceAppearance,
-				"" .. piece.id .. ":" .. material.id .. "-" .. channel.name,
-				propertyName
-			)
+			-- TagUtils.wireInstance(
+			-- 	surfaceAppearance,
+			-- 	"" .. piece.id .. ":" .. material.id .. "-" .. channel.name,
+			-- 	propertyName
+			-- )
 		end
 		-- table.insert(partsToUpdate, surfaceAppearance)
 	end
 end
 
 function ObjectFetcherService:reset_texture_channel(instance: Instance, propertyName: string): meshNode
-	print("### resetting texture channel", instance, propertyName)
+	--print("### resetting texture channel", instance, propertyName)
 	local imagePropertyConfig = WireableProperties:get_image_property_configuration(instance.ClassName, propertyName)
-	print("### image prop config", imagePropertyConfig)
+	--print("### image prop config", imagePropertyConfig)
 	if imagePropertyConfig["editableProperty"] ~= nil then
 		instance[imagePropertyConfig["editableProperty"]] = Content.none
 	end

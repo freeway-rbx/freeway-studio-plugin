@@ -11,7 +11,7 @@ local DEEP_SUFFIX = ':deep'
 local TagUtils = {}
 
 function TagUtils.getInstanceWires(instance: Instance)
-	local property_wires = getInstanceWiresInternal(instance)
+	local property_wires = getInstanceWiresInternal(instance)['obj']
     local cleaned_up = {}
     for object_id, property in property_wires do
         property = string.gsub(property, DEEP_SUFFIX, "")    
@@ -44,7 +44,12 @@ function TagUtils.wireInstance(instance: Instance, object_id, property: string, 
 	if deep then
 		property = property .. DEEP_SUFFIX
 	end
-	wires[object_id] = property
+	
+    wires[object_id] = property
+
+    local internalWires = getInstanceWiresInternal(instance)
+
+    CollectionService:RemoveTag(instance, internalWires['tag']) -- remove old wiring tag
 	TagUtils.setInstanceWires(instance, wires)
 end
 
@@ -62,7 +67,7 @@ end
 
 
 function TagUtils.isDeepWired(instance: Instance, property: string): boolean
-    local property_wires = getInstanceWiresInternal(instance)
+    local property_wires = getInstanceWiresInternal(instance)['obj']
     for _, current_property in property_wires do
         local property_replaced, count = string.gsub(current_property, DEEP_SUFFIX, "")    
         if property == property_replaced and count > 0 then
@@ -75,8 +80,10 @@ end
 
 
 
-function getInstanceWiresInternal(instance: Instance): {}
-    if not instance:HasTag(TAG_WIRED) then return {} end
+function getInstanceWiresInternal(instance: Instance): {obj: {}, tag: string}
+    if not instance:HasTag(TAG_WIRED) then 
+        return {obj = {}, tag = ""} 
+    end
     for _, tag in instance:GetTags() do
         local replaced, count = string.gsub(tag, TAG_PREFIX, "")
         if count < 1  then
@@ -85,15 +92,16 @@ function getInstanceWiresInternal(instance: Instance): {}
         end
         -- todo MI handle json parsing errors
         local property_wires = HttpService:JSONDecode(replaced) :: {}
-        return property_wires
+
+        return {obj = property_wires, tag = tag}
     end
-    return {}
+    return {obj = {}, tag = ""}
 end
 
 
 function TagUtils.setInstanceWiresRespectDeep(instance: Instance, wires: {}, respect_deep: boolean?)
     -- cleanup tags
-    local current_wires = getInstanceWiresInternal(instance)
+    local current_wires = getInstanceWiresInternal(instance)['obj']
 
     --print('set_instance_wires_respect_deep!', wires)
     instance:RemoveTag(TAG_WIRED)
