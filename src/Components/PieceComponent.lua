@@ -152,6 +152,7 @@ function PieceComponent:render()
 		AnchorPoint = Vector2.new(0.8, 0.5),
 		Position = UDim2.fromScale(0.459, 0.5),
 		Size = UDim2.new(1, 0, 0, 65),
+		LayoutOrder = self.props.index,
 		BackgroundColor3 = PluginEnum.ColorButtonBackground,
 		BackgroundTransparency = 0,
 		BorderSizePixel = 0,
@@ -168,7 +169,7 @@ function PieceComponent:render()
 		}, {
 			uIListLayout = React.createElement("UIListLayout", {
 				FillDirection = Enum.FillDirection.Horizontal,
-				Padding = UDim.new(0, 10),
+				Padding = UDim.new(0, 3),
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				VerticalAlignment = Enum.VerticalAlignment.Top,
 			}),

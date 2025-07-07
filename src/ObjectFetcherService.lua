@@ -87,7 +87,7 @@ function ObjectFetcherService:anchor_part_name()
 end
 
 function ObjectFetcherService:find_anchor_part(instance: Instance)
-	local parent = instance.Parent
+	local parent = instance
 	if parent == nil then
 		print("###parent is nil for instance", instance.Name)
 	end
@@ -709,7 +709,9 @@ local fetchThread = task.spawn(function()
 				pieces = {}
 			end
 			ObjectFetcherService.offline = false
-			ObjectFetcherService.pieces = pieces
+			ObjectFetcherService.pieces = Cryo.List.sort(pieces, function(a, b)
+				return a.name:lower() < b.name:lower()
+			end)
 
 			local tmp_pieces_map = {}
 			local counter = 0
@@ -1078,12 +1080,16 @@ function ObjectFetcherService:name_object(object: ObjectInfo)
 	end
 end
 
-function ObjectFetcherService:create_new_mesh_part(parent: Instance, node: meshNode, piece: Piece)
+function ObjectFetcherService:create_new_mesh_part(parent: Instance, anchor: Instance, node: meshNode, piece: Piece)
 	local part = Instance.new("MeshPart")
 	part.Name = node.name
 	part.Size = Vector3.new(2, 2, 2)
 	part.CanCollide = true
 	part.Parent = parent
+	if anchor ~= nil then
+		part.Position = anchor.Position	
+	end
+	
 	TagUtils.wireInstance(part, "" .. piece.id .. ":" .. node.id, "MeshId")
 	local material = ObjectFetcherService:get_material_channels_for_mesh(piece, node.id)
 	local surfaceAppearance = nil
@@ -1256,19 +1262,20 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			for mesh_id, mesh_part_exists in mesh_part_state do
 				if not mesh_part_exists then
 					-- insert new mesh part with material
-					ObjectFetcherService:create_new_mesh_part(instance, mesh_map[mesh_id], piece)
+					local anchor = ObjectFetcherService:find_anchor_part(instance)
+					ObjectFetcherService:create_new_mesh_part(instance, anchor, mesh_map[mesh_id], piece)
 					inserted = inserted + 1
 				end
 			end
 
 			if removed ~= 0 or inserted ~= 0 then
-				print("###updated the model, inserted: ", inserted, "removed: ", removed, debug.traceback())
+				print("###updated the model, inserted: ", inserted, "removed: ", removed)
 			end
 
 			continue
 		end
 		if piece == nil or missingChild then
-			print("remove a wire with non-existent object_id: " .. object_id, "cleanup only", cleanup_only, debug.traceback())
+			print("remove a wire with non-existent object_id: " .. object_id, "cleanup only", cleanup_only)
 			print("TODO Implement the resetting of the Editable/Local asset")
 			wires[object_id] = nil -- remove wire for missing piece
 			needsTagsUpdate = true
@@ -1360,13 +1367,14 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 				local assetUrl = "rbxassetid://" .. assetId
 				newMeshPart = AssetService:CreateMeshPartAsync(Content.fromUri(assetUrl))
 			end
-			instance.Size = newMeshPart.MeshSize
-			instance:ApplyMesh(newMeshPart)
 			local anchor = ObjectFetcherService:find_anchor_part(instance)
 			if anchor ~= nil then
 				local tr = ObjectFetcherService:mesh_translation(object)
-				instance.Position = anchor.Position + Vector3.new(tr[1], tr[2], tr[3])
+				instance.PivotOffset = CFrame.new(tr[1], tr[2], tr[3])
 			end
+			instance.Size = newMeshPart.MeshSize
+			instance:ApplyMesh(newMeshPart)
+			
 		else
 			print("! Unsupported Piece type: " .. piece.type)
 		end

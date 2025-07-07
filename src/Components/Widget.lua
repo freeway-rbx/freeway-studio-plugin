@@ -77,7 +77,7 @@ function Widget:init()
 	self.updateThread = task.spawn(function()
 		while updateUIStateAutomatically do
 			-- fetching data, should be externalized and listen to events from ObjectFetcherService
-			local pieces = self.props.fetcher.pieces
+			local pieces = self.props.fetcher.pieces			
 			local pendingSaving = self.props.fetcher.pending_save
 
 			local currentPiece = nil
@@ -393,7 +393,7 @@ function Widget:renderList()
 		if piece.type == "mesh" then
 			newPieceComponent = React.createElement(SceneComponent, {
 				piece = piece,
-				index = 1,
+				index = k,
 				fetcher = self.props.fetcher,
 				onClick = function()
 					self:setState({
@@ -401,7 +401,6 @@ function Widget:renderList()
 						currentPiece = {},
 					})
 				end,
-				LayoutOrder = k,
 			})
 		else
 			newPieceComponent = React.createElement(PieceComponent, {
