@@ -1355,7 +1355,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 
 				local em = ObjectFetcherService:fetch(object)
 				if em == nil then
-					print("mesh: waiting for a cached mesh", object.id, object.childId, object.hash)
+					--print("mesh: waiting for a cached mesh", object.id, object.childId, object.hash)
 					continue
 				end
 				-- print('mesh: about to apply mesh as Editable', object.id, object.childId, object.hash)
@@ -1366,11 +1366,17 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 				local assetId = get_current_asset_id(piece, child_id)
 				local assetUrl = "rbxassetid://" .. assetId
 				newMeshPart = AssetService:CreateMeshPartAsync(Content.fromUri(assetUrl))
+				print("mesh: mesh part created from asset", object.id, object.childId, object.hash)
 			end
 			local anchor = ObjectFetcherService:find_anchor_part(instance)
 			if anchor ~= nil then
 				local tr = ObjectFetcherService:mesh_translation(object)
-				instance.PivotOffset = CFrame.new(tr[1], tr[2], tr[3])
+				if tr ~= nil then
+						instance.PivotOffset = CFrame.new(tr[1], tr[2], tr[3])
+					else
+						--print("mesh: no translation for mesh", object.id, object.childId, object.hash)
+				end
+				
 			end
 			instance.Size = newMeshPart.MeshSize
 			instance:ApplyMesh(newMeshPart)
