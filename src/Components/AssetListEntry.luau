@@ -74,8 +74,8 @@ local function AssetListEntry(props: {
 			Text = props.Title,
 			BackgroundTransparency = 1,
 			TextXAlignment = Enum.TextXAlignment.Left,
-						AutomaticSize = Enum.AutomaticSize.XY,
-
+			AutomaticSize = Enum.AutomaticSize.XY,
+			TextColor3 = PluginEnum.ColorTextPrimary,
 			LayoutOrder = 2,
 		}, {
 			UISizeConstraint = e("UISizeConstraint", {
