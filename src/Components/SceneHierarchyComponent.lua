@@ -55,6 +55,7 @@ function SceneComponent:renderTree(node, i, parents, depth)
 		childPath = childPath .. item.name .. "/"
 	end
 
+	local localDepth = depth
 
 	local insertObject = function()
 		local camera = workspace.CurrentCamera
@@ -105,7 +106,8 @@ function SceneComponent:renderTree(node, i, parents, depth)
 					meshPart.Position = partPosition
 				end
 
-				if depth ~= 0 then
+
+				if localDepth ~= 0 then
 					TagUtils.wireInstance(part, self.props.piece.id .. ":" .. childPath, "Model")
 				else 					
 					TagUtils.wireInstance(part, self.props.piece.id .. ":root" , "Model")
@@ -149,12 +151,27 @@ function SceneComponent:renderTree(node, i, parents, depth)
 
 	local childrenElements = {}
 	
+	local counter = 0
+	if depth == 0 and node.children[1].name == "root" then
+		table.insert(parents, node.children[1])
+		depth = depth + 1
+		node = node.children[1]
+	end
+
+	if depth == 1 and node.children[1].name == "Scene" then
+		table.insert(parents, node.children[1])
+		depth = depth + 1
+		node = node.children[1]
+	end
+
 	for i, child in node.children do
 		if child == "hash" then
 			continue
 		end
 		childrenElements['node_' .. i] = self:renderTree(child, i, parents, depth + 1)
+		counter = counter + 1
 	end
+
 	
 	return React.createElement(StudioComponents.Collapsible, {
 		Title = title,
@@ -245,6 +262,7 @@ function SceneComponent:render()
 		-- }
 	}
 	if self.props.piece.metadata ~= nil then
+		
 		model = {
 			name = self.props.piece.name,
 			children = { self.props.piece.metadata },
