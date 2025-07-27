@@ -74,13 +74,13 @@ table.insert(
 	end)
 )
 
-table.insert(
-	connections,
-	CollectionService:GetInstanceRemovedSignal("wired"):Connect(function(instance)
-		--ObjectFetcherService:update_instance_if_needed(instance)
-		--print("implement me!")
-	end)
-)
+-- table.insert(
+-- 	connections,
+-- 	CollectionService:GetInstanceRemovedSignal("wired"):Connect(function(instance)
+-- 		--ObjectFetcherService:update_instance_if_needed(instance)
+-- 		--print("implement me!")
+-- 	end)
+-- )
 
 function ObjectFetcherService:anchor_part_name()
 	return "~freeway_anchor_do_not_delete"
