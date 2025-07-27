@@ -8,7 +8,10 @@ local TAG_WIRED = "wired"
 local TAG_PREFIX = "piece:"
 local DEEP_SUFFIX = ':deep'
 
-local TagUtils = {}
+local TagUtils = {
+    
+    mutex_table = {}
+}
 
 function TagUtils.getInstanceWires(instance: Instance)
 	local property_wires = getInstanceWiresInternal(instance)['obj']
@@ -100,6 +103,13 @@ end
 
 
 function TagUtils.setInstanceWiresRespectDeep(instance: Instance, wires: {}, respect_deep: boolean?)
+    if TagUtils.mutex_table[instance] ~= nil then
+        task.wait(0.01)
+    end
+    TagUtils.mutex_table[instance] = true
+
+
+
     -- cleanup tags
     local current_wires = getInstanceWiresInternal(instance)['obj']
 
@@ -131,6 +141,9 @@ function TagUtils.setInstanceWiresRespectDeep(instance: Instance, wires: {}, res
     instance:AddTag(tagsJson)
 
     instance:AddTag(TAG_WIRED)
+
+
+    TagUtils.mutex_table[instance] = nil
 end    
 
 function TagUtils.setInstanceWires(instance: Instance, wires: {})
