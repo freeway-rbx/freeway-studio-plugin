@@ -50,9 +50,6 @@ function TagUtils.wireInstance(instance: Instance, object_id, property: string, 
 	
     wires[object_id] = property
 
-    local internalWires = getInstanceWiresInternal(instance)
-
-    CollectionService:RemoveTag(instance, internalWires['tag']) -- remove old wiring tag
 	TagUtils.setInstanceWires(instance, wires)
 end
 
@@ -65,6 +62,8 @@ function TagUtils.unwireInstance(instance: Instance, property: string)
 		end
 		resulting_wires[piece_id] = property
 	end
+
+
 	TagUtils.setInstanceWires(instance, resulting_wires)
 end
 
@@ -111,11 +110,17 @@ function TagUtils.setInstanceWiresRespectDeep(instance: Instance, wires: {}, res
 
 
     -- cleanup tags
-    local current_wires = getInstanceWiresInternal(instance)['obj']
-
+    local internal_wires = getInstanceWiresInternal(instance)
+    local current_wires = internal_wires['obj']
+    local current_tag = internal_wires['tag']
     --print('set_instance_wires_respect_deep!', wires)
-    instance:RemoveTag(TAG_WIRED)
     
+    instance:RemoveTag(TAG_WIRED)
+    if current_tag ~= nil then -- if wired
+        --print('removing old tag: ' .. current_tag)
+        instance:removeTag(current_tag) -- remove old wiring tag
+    end
+
     -- re-setup tags
     local counter = 0;
     for object_id, property in wires do

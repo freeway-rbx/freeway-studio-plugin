@@ -165,7 +165,8 @@ function Widget:render()
 			else nil,
 		-- scrolling content frame
 		ScrollingFrame = React.createElement("ScrollingFrame", {
-			Size = UDim2.new(1, 0, 1, 0),
+			Size = UDim2.new(1, 0, 0.9, 0),
+			
 			BackgroundTransparency = 1,
 			CanvasSize = UDim2.new(1, 0, 1, 0),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
@@ -186,9 +187,47 @@ function Widget:render()
 			-- }),
 			content = if self.state.mode == MODE_LIST then self:renderList() else self:renderPieceDetails(),
 		}),
-	})
+
+		--settingsPanel = self:renderSettingsPanel()
+	}) 
+
 
 	return element
+end
+
+
+
+function Widget:renderSettingsPanel() 
+	local theme = settings().Studio.Theme
+	
+	return React.createElement("Frame", {
+		Size = UDim2.new(1, 0, 0, 50),
+		AutomaticSize = Enum.AutomaticSize.X,
+		LayoutOrder = 4,
+		BorderSizePixel = 0,
+		BackgroundColor3 = PluginEnum.ColorBackground,
+	}, {
+			uiListLayout = React.createElement("UIListLayout", {
+				Padding = UDim.new(2, 2),
+				HorizontalAlignment = Enum.HorizontalAlignment.Left,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				FillDirection = Enum.FillDirection.Horizontal,
+			}),
+			uiPadding = React.createElement("UIPadding", {
+				PaddingLeft = UDim.new(0, PluginEnum.PaddingHorizontal),
+				PaddingRight = UDim.new(0, PluginEnum.PaddingHorizontal),
+				PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
+				PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
+			}),
+			checkbox = React.createElement(StudioComponents.Checkbox, {
+				Value = self.props.fetcher.settingsDoNotDelete,
+				OnChanged = function()
+					self.props.fetcher.settingsDoNotDelete = not self.props.fetcher.settingsDoNotDelete
+				end,
+				Label = "Keep MeshParts for deleted meshes"
+			})	
+
+	})
 end
 
 function Widget:renderStatusPanel()
@@ -213,11 +252,6 @@ function Widget:renderStatusPanel()
 			PaddingTop = UDim.new(0, PluginEnum.PaddingVertical),
 			PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
 		}),
-		-- savingLoadingDots = React.createElement(StudioComponents.LoadingDots, {
-		-- 	LayoutOrder = 1,
-		-- 	AutomaticSize = Enum.AutomaticSize.None,
-		-- 	Size = UDim2.new(0, 5, 0, 5),
-		-- }),
 
 		offlineIndicatorLabel = self.state.offline and React.createElement("TextLabel", {
 			Size = UDim2.new(0, 20, 0, 20),
@@ -253,7 +287,6 @@ function Widget:renderStatusPanel()
 				PaddingBottom = UDim.new(0, PluginEnum.PaddingVertical),
 			}),
 		}),
-
 		savePending = #self.state.pendingSaving ~= 0 and React.createElement("TextButton", {
 			Text = "Save " .. #self.state.pendingSaving .. " dynamic piece(s) to Roblox",
 			AutomaticSize = Enum.AutomaticSize.XY,

@@ -26,7 +26,9 @@ local ObjectFetcherService = {
 	relaunched = true,
 	enabled = false,
 	offline = false,
-	updateAvailable = false, -- TODO MI Implement update checker
+	updateAvailable = false, -- TODO MI Implement update checker, 
+	
+	settingsDoNotDelete = true
 }
 
 export type Piece = {
@@ -67,12 +69,12 @@ local pieces_sync_state: PiecesSyncState = {
 }
 
 local connections: { RBXScriptConnection } = {}
-table.insert(
-	connections,
-	CollectionService:GetInstanceAddedSignal("wired"):Connect(function(instance)
-		ObjectFetcherService:update_instance_if_needed(instance)
-	end)
-)
+-- table.insert(
+-- 	connections,
+-- 	CollectionService:GetInstanceAddedSignal("wired"):Connect(function(instance)
+-- 		ObjectFetcherService:update_instance_if_needed(instance)
+-- 	end)
+-- )
 
 -- table.insert(
 -- 	connections,
@@ -473,7 +475,7 @@ end
 local downloadThread = task.spawn(function()
 	while true do
 		if ObjectFetcherService.enabled ~= true then
-			task.wait(0.5)
+			task.wait(1)
 			continue
 		end
 
@@ -485,7 +487,7 @@ local downloadThread = task.spawn(function()
 			if exists and (cached == nil or cached.hash ~= object.hash) then
 				local status, err = pcall(fetchFromNetwork, object)
 				if not status then
-					warn("[FREEWAY] - Can't fetch object ", object, " from the filesystem. fetchFromNetwork:", err)
+					warn("[FREEWAY] - Can't fetch object ", object, " from the filesystem. fetchFromNetwork:", #ObjectFetcherService.download_queue, err)
 				end
 			end
 
@@ -530,7 +532,7 @@ function saveAsset(object, objectInfo: ObjectInfo)
 	if objectInfo.type == "image" then
 		assetType = Enum.AssetType.Image
 		editableObject = editableObject.Object
-		print("saveAsset", "Editable Image", editableObject)
+		--print("saveAsset", "Editable Image", editableObject)
 	end
 	local loggedInUserId = StudioService:GetUserId()
 	local resultUserId = loggedInUserId
@@ -556,7 +558,7 @@ function saveAsset(object, objectInfo: ObjectInfo)
 		warn(`error calling CreateAssetAsync: {result}`)
 		return { ok = false, assetIdOrError = idOrUploadErr, result = result }
 	elseif result == Enum.CreateAssetResult.Success then
-		print(`success, new asset id: {idOrUploadErr}`)
+		--print(`success, new asset id: {idOrUploadErr}`)
 
 		-- TODO MI: Update asset id right away in wired instances
 		local result = ObjectFetcherService:updateAssetIdForPiece(objectInfo, idOrUploadErr)
@@ -571,7 +573,7 @@ function saveAsset(object, objectInfo: ObjectInfo)
 			)
 			return { ok = false, assetIdOrError = idOrUploadErr }
 		else
-			print(`updated the asset id for piece `, objectInfo.id, objectInfo.childId, "to: ", idOrUploadErr)
+			--print(`updated the asset id for piece `, objectInfo.id, objectInfo.childId, "to: ", idOrUploadErr)
 			return { ok = true, assetIdOrError = idOrUploadErr }
 		end
 	else
@@ -629,7 +631,7 @@ local assetSaveThread = task.spawn(function()
 			if not ObjectFetcherService:objectHasAsset(piece, objectInfo.childId) then
 				local result = saveAsset(cached, objectInfo)
 				if result.ok then
-					print("saved asset")
+					--print("saved asset")
 				else
 					print("error saving asset: ", result, "removing")
 				end
@@ -1243,14 +1245,15 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 					mesh_part_state[child_id] = true
 
 					if mesh_map[child_id] == nil then
-						print(
-							"## update_wired_instances: removing mesh part",
-							descendant,
-							"for piece",
-							piece_id,
-							"child",
-							child_id
-						)
+
+						-- print(
+						-- 	"## update_wired_instances: removing mesh part",
+						-- 	descendant,
+						-- 	"for piece",
+						-- 	piece_id,
+						-- 	"child",
+						-- 	child_id
+						-- )
 						descendant:Destroy()
 						removed = removed + 1
 					else
