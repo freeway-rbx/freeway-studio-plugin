@@ -325,7 +325,7 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 					local camera = workspace.CurrentCamera
 
 					local part = nil
-
+					local decal = nil
 					if self.props.piece.type == "mesh" then
 						part = Instance.new("MeshPart")
 						part.Name = "MeshPart"
@@ -339,8 +339,9 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 						part.Size = Vector3.new(2, 2, 0.5)
 						part.Name = "Part"
 						part.CanCollide = true
-						local decal = Instance.new("Decal")
+						decal = Instance.new("Decal")
 						decal.Parent = part
+						
 						TagUtils.wireInstance(decal, self.props.piece.id, "Texture")
 					end
 
@@ -352,6 +353,9 @@ function PieceDetailsComponent:renderPreviewAndActions(order: number)
 
 					Selection:Set({ part })
 					self.props.fetcher:update_instance_if_needed(part)
+					if decal then
+						self.props.fetcher:update_instance_if_needed(decal)
+					end
 				end,
 			}),
 		}),

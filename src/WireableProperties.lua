@@ -22,7 +22,7 @@ local wireableProperties: { string: { PropertyData } } = {
 			CursorIcon = { editableImage = false, localAsset = true },
 		},
 		Decal = {
-			Texture = { editableImage = false, localAsset = true, editableProperty = "TextureContent" },
+			Texture = { editableImage = true, localAsset = false, editableProperty = "TextureContent" },
 		},
 		DragDetector = {
 			ActivatedCursorIcon = { editableImage = false, localAsset = true },
@@ -34,7 +34,7 @@ local wireableProperties: { string: { PropertyData } } = {
 			Texture = { editableImage = false, localAsset = true },
 		},
 		ImageButton = {
-			Image = { editableImage = false, localAsset = true, editableProperty = "ImageContent" },
+			Image = { editableImage = true, localAsset = false, editableProperty = "ImageContent" },
 			HoverImage = { editableImage = false, localAsset = true },
 			PressedImage = { editableImage = false, localAsset = true },
 		},
@@ -42,7 +42,7 @@ local wireableProperties: { string: { PropertyData } } = {
 			Image = { editableImage = false, localAsset = true },
 		},
 		ImageLabel = {
-			Image = { editableImage = false, localAsset = true, editableProperty = "ImageContent" },
+			Image = { editableImage = true, localAsset = false, editableProperty = "ImageContent" },
 		},
 		MaterialVariant = {
 			ColorMap = { editableImage = false, localAsset = false },
