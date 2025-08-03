@@ -1326,10 +1326,16 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 				local ei = ObjectFetcherService:fetch(object)
 				if ei == nil then
 					print("cant fetch image to set Content for ", piece.id, child_id)
+					ObjectFetcherService:add_object_to_queue(
+						object,
+						ObjectFetcherService.download_queue,
+						"download queue"
+					)
 					continue
 				end
-				print("about to apply EditableImage")
+				print("about to apply EditableImage", piece_id, child_id)
 				instance[imagePropertyConfig["editableProperty"]] = ei
+				print("applied EditableImage", piece_id, child_id)
 			elseif imagePropertyConfig["localAsset"] then
 				local extension = "png"
 				-- local status, parsed_extension = pcall(function() return get_extension(piece.name) end)

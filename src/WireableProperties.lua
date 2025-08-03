@@ -90,10 +90,10 @@ local wireableProperties: { string: { PropertyData } } = {
 			MoonTextureId = { editableImage = false, localAsset = true },
 		},
 		SurfaceAppearance = {
-			ColorMap = { editableImage = false, localAsset = false, editableProperty = "ColorMapContent" },
-			MetalnessMap = { editableImage = false, localAsset = false, editableProperty = "MetalnessMapContent" },
-			NormalMap = { editableImage = false, localAsset = false, editableProperty = "NormalMapContent" },
-			RoughnessMap = { editableImage = false, localAsset = false, editableProperty = "RoughnessMapContent" },
+			ColorMap = { editableImage = true, localAsset = false, editableProperty = "ColorMapContent" },
+			MetalnessMap = { editableImage = true, localAsset = false, editableProperty = "MetalnessMapContent" },
+			NormalMap = { editableImage = true, localAsset = false, editableProperty = "NormalMapContent" },
+			RoughnessMap = { editableImage = true, localAsset = false, editableProperty = "RoughnessMapContent" },
 		},
 		TerrainDetail = {
 			ColorMap = { editableImage = false, localAsset = false },
