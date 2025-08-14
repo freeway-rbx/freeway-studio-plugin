@@ -20,6 +20,8 @@ local ObjectFetcherService = {
 	download_queue = {},
 	asset_save_queue = {},
 
+
+	
 	pending_save = {},
 
 	updatedAt = -3,
@@ -27,7 +29,7 @@ local ObjectFetcherService = {
 	enabled = false,
 	offline = false,
 	updateAvailable = false, -- TODO MI Implement update checker, 
-	
+	skip = {},
 	settingsDoNotDelete = true
 }
 
@@ -457,7 +459,12 @@ local function fetchFromNetwork(object: ObjectInfo)
 	end
 	if object.type == "mesh" then
 		--print("mesh: fetched mesh, about to cache", object.id, object.childId, object.hash)
-		local em = RbxToEditableMesh(json.mesh)
+		local meshParsingResult = RbxToEditableMesh(json.mesh)
+		if meshParsingResult ~= nil and meshParsingResult.error then
+			ObjectFetcherService.skip[object] = true
+			return
+		end
+		local em = meshParsingResult.em
 		--print("mesh: fetched mesh, caching", object.id, object.childId, object.hash)
 		ObjectFetcherService.cache[cache_key_for_object(object)] = { object = em, hash = object.hash }
 		ObjectFetcherService.cache[cache_key_for_object(object) .. "_tr"] = json.translation
@@ -751,6 +758,7 @@ local fetchThread = task.spawn(function()
 						end
 
 						local objectInfo = ObjectFetcherService:construct_object(piece.id, child_id)
+
 						ObjectFetcherService:fetch(objectInfo)
 					end
 				end
@@ -840,6 +848,13 @@ local fetchThread = task.spawn(function()
 end)
 
 function RbxToEditableMesh(rbxMesh): EditableMesh
+
+
+	if #rbxMesh.v > 100000 then
+		return { error=true }
+	end
+	
+
 	local em = AssetService:CreateEditableMesh({})
 	local vID, uvID, nID, fID = {}, {}, {}, {}
 	local id = 0
@@ -870,22 +885,29 @@ function RbxToEditableMesh(rbxMesh): EditableMesh
 			table.insert(faces, face2)
 		end
 	end
+
+
 	for _, face in faces do
 		-- v1[/vt1][/vn1] v2[/vt2][/vn2] v3[/vt3][/vn3] ...
 		if #face.v ~= 3 then
 			print("not a tri-face, return")
 		end
+		--print("[parse mesh] add face", face.v[1][1], face.v[2][1], face.v[3][1], " vals ",  vID[face.v[1][1]], vID[face.v[2][1]], vID[face.v[3][1]])
 		id = em:AddTriangle(vID[face.v[1][1]], vID[face.v[2][1]], vID[face.v[3][1]])
 		table.insert(fID, id)
-		em:SetFaceUVs(id, { uvID[face.v[1][2]], uvID[face.v[2][2]], uvID[face.v[3][2]] })
+		if uvID[face.v[1][2]] ~= nil or uvID[face.v[2][2]] ~= nil or uvID[face.v[3][2]] ~= nil then 
+			em:SetFaceUVs(id, { uvID[face.v[1][2]], uvID[face.v[2][2]], uvID[face.v[3][2]] })
+		end
 		em:SetFaceNormals(id, { nID[face.v[1][3]], nID[face.v[2][3]], nID[face.v[3][3]] })
 	end
-	return em
+	return {error=false, em = em}
 end
 
 function ObjectFetcherService:fetch(objectInfo: ObjectInfo)
 	local obj = self.cache[cache_key_for_object(objectInfo)]
-
+	if self.skip[objectInfo] then
+		return nil
+	end
 	--    print('fetch piece with id and hash: ', piece.id, piece.hash)
 	if obj ~= nil and obj.hash == objectInfo.hash then
 		if obj.type == "mesh" then
@@ -1184,9 +1206,51 @@ function ObjectFetcherService:update_material_if_needed(parent: Instance, node: 
 	end
 end
 
+
+function ObjectFetcherService:download_all_wires(wires)
+	
+	local need_download = false
+	for object_id, propertyName in wires do
+		local split = string.split(object_id, ":")
+			local piece_id = split[1]
+			local child_id = nil
+			local pbr = nil
+			if #split > 1 then
+				child_id = split[2]
+			end
+		local object = ObjectFetcherService:construct_object(piece_id, child_id)
+
+		local cached = ObjectFetcherService.cache[cache_key_for_object(object)]
+		if cached == nil then
+			print("### SurfaceAppearance download:", object.id, object.hash, #ObjectFetcherService.download_queue)
+
+			ObjectFetcherService:add_object_to_queue(
+				object,
+				ObjectFetcherService.download_queue,
+				"download queue"
+			)
+			need_download = true
+		end
+	end
+	return need_download
+end
+
+
+function ObjectFetcherService:construct_object_from_string(object_id: string): ObjectInfo
+	local split = string.split(object_id, ":")
+	local piece_id = split[1]
+	local child_id = nil
+	if #split > 1 then
+		child_id = split[2]
+	end
+	return ObjectFetcherService:construct_object(piece_id, child_id)
+end
+
+
 function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boolean): number
 	local needsTagsUpdate = false
 
+	
 	for object_id, propertyName in wires do
 		local split = string.split(object_id, ":")
 		local piece_id = split[1]
@@ -1284,8 +1348,58 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			needsTagsUpdate = true
 			continue
 		end
+
+
 		if cleanup_only then
 			continue
+		end
+
+
+		-- Handle SurfaceAppearance separately
+		if instance.ClassName == "SurfaceAppearance" then
+			if (ObjectFetcherService:download_all_wires(wires)) then
+				print("### SurfaceAppearance still downloading, wired to: ", wires)
+
+				break
+			end	
+			local propertyToObject = {}
+			for object_id, propertyName in wires do
+				propertyToObject[propertyName] = ObjectFetcherService:construct_object_from_string(object_id) 
+			end	
+
+			local colorMap = propertyToObject["ColorMap"] and ObjectFetcherService.cache[cache_key_for_object(propertyToObject["ColorMap"])]
+			local normalMap = propertyToObject["NormalMap"] and ObjectFetcherService.cache[cache_key_for_object(propertyToObject["NormalMap"])]
+			local metalnessMap =propertyToObject["MetalnessMap"] and ObjectFetcherService.cache[cache_key_for_object(propertyToObject["MetalnessMap"])]
+			local roughnessMap = propertyToObject["RoughnessMap"] and ObjectFetcherService.cache[cache_key_for_object(propertyToObject["RoughnessMap"])]
+			local colorMapContent, normalMapContent, metalnessMapContent, roughnessMapContent = nil, nil, nil, nil
+			if colorMap ~= nil then
+				colorMapContent = colorMap.object
+			end
+			if normalMap ~= nil then
+				normalMapContent = normalMap.object
+			end
+			if metalnessMap ~= nil then
+				metalnessMapContent = metalnessMap.object
+			end
+			if roughnessMap ~= nil then
+				roughnessMapContent = roughnessMap.object
+			end
+
+			local sa = AssetService:CreateSurfaceAppearanceAsync({
+					ColorMap = colorMapContent,
+					-- NormalMap is not specified
+					NormalMap = normalMapContent,
+					MetalnessMap = metalnessMapContent,
+					RoughnessMap = roughnessMapContent
+			})
+
+			for _, tag in instance:GetTags() do
+				sa:AddTag(tag)
+			end
+			sa.Parent = instance.Parent
+			instance:Destroy()
+
+			break
 		end
 
 		local object = ObjectFetcherService:construct_object(piece_id, child_id)
