@@ -140,6 +140,21 @@ function Widget:render()
 				})
 			end,
 		}),
+		test = React.createElement("TextButton", {
+			Text = "Dump State",
+			AutomaticSize = Enum.AutomaticSize.XY,
+			Size = UDim2.new(0, 0, 0, 0),
+			TextColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButtonText),
+			BackgroundColor3 = theme:GetColor(Enum.StudioStyleGuideColor.DialogMainButton),
+			BorderSizePixel = 0,
+			Font = Enum.Font.BuilderSansBold,
+			TextSize = 40,
+
+			LayoutOrder = 0,
+			[React.Event.MouseButton1Click] = function()
+				self.props.fetcher:dump_state()
+			end,
+		}),
 
 		statusPanel = self:renderStatusPanel(),
 

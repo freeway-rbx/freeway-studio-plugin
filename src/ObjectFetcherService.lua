@@ -479,34 +479,48 @@ function ObjectFetcherService:mesh_translation(object: ObjectInfo)
 end
 
 -- download queue handler
-local downloadThread = task.spawn(function()
-	while true do
-		if ObjectFetcherService.enabled ~= true then
-			task.wait(1)
-			continue
-		end
 
-		if #ObjectFetcherService.download_queue > 0 then
-			local object = ObjectFetcherService.download_queue[1]
-			local cached = ObjectFetcherService.cache[cache_key_for_object(object)]
-			local exists = ObjectFetcherService:object_exists(object)
+local download_worker_threads = {}
+local downloading_state = {}
+for i=1,5 do
+	local task = task.spawn(function()
+		print("download thread ", i, " started")
+		while true do
+			if #ObjectFetcherService.download_queue > 0 then
+				print("download thread ", i, " fetching")
 
-			if exists and (cached == nil or cached.hash ~= object.hash) then
-				local status, err = pcall(fetchFromNetwork, object)
-				if not status then
-					warn("[FREEWAY] - Can't fetch object ", object, " from the filesystem. fetchFromNetwork:", #ObjectFetcherService.download_queue, err)
+				local object = ObjectFetcherService.download_queue[1]
+				table.remove(ObjectFetcherService.download_queue, 1)
+				
+				local cacheKey = cache_key_for_object(object)
+				if downloading_state[cacheKey] then
+					continue
 				end
+				downloading_state[cacheKey] = true
+				local cached = ObjectFetcherService.cache[cacheKey]
+				local exists = ObjectFetcherService:object_exists(object)
+				
+
+				if exists and (cached == nil or cached.hash ~= object.hash) then
+					local status, err = pcall(fetchFromNetwork, object)
+					if not status then
+						warn("[FREEWAY] - Can't fetch object ", object, " from the filesystem. fetchFromNetwork:", #ObjectFetcherService.download_queue, err)
+						downloading_state[cacheKey] = nil
+					end
+				end
+
+				print("download thread ", i, " processed ", object.id, object.childId, object.hash, " queue size ", #ObjectFetcherService.download_queue)
+
+				-- TODO MI update all instances wired to this object
+				ObjectFetcherService:update_instances_wired_to_object(object)
+			else
+				task.wait(0.1)
 			end
-
-			table.remove(ObjectFetcherService.download_queue, 1)
-
-			-- TODO MI update all instances wired to this object
-			ObjectFetcherService:update_instances_wired_to_object(object)
-		else
-			task.wait(0.1)
-		end
 	end
-end)
+	end)
+	table.insert(download_worker_threads, task)		
+end
+
 
 function ObjectFetcherService:update_instances_wired_to_object(object: ObjectInfo)
 	local instance_wires = TagUtils.ts_get_all_wired_in_dm()
@@ -1398,6 +1412,7 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 			end
 			sa.Parent = instance.Parent
 			instance:Destroy()
+			print("reset surface appearance", object_id, child_id, sa.Parent.Name)
 
 			break
 		end
@@ -1440,11 +1455,6 @@ function update_wired_instances(instance: Instance, wires: {}, cleanup_only: boo
 				local ei = ObjectFetcherService:fetch(object)
 				if ei == nil then
 					print("cant fetch image to set Content for ", piece.id, child_id)
-					ObjectFetcherService:add_object_to_queue(
-						object,
-						ObjectFetcherService.download_queue,
-						"download queue"
-					)
 					continue
 				end
 				print("about to apply EditableImage", piece_id, child_id)
@@ -1543,7 +1553,9 @@ function ObjectFetcherService:setEnabled(enabled: boolean)
 end
 
 function ObjectFetcherService:stop()
-	task.cancel(downloadThread)
+	for _, thread in download_worker_threads do
+		task.cancel(thread)
+	end
 	task.cancel(fetchThread)
 	task.cancel(assetSaveThread)
 
@@ -1552,4 +1564,9 @@ function ObjectFetcherService:stop()
 	end
 end
 
+
+function ObjectFetcherService:dump_state() 
+	print("Download queue size: ", #self.download_queue)
+end
 return ObjectFetcherService
+
